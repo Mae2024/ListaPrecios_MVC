@@ -1,0 +1,65 @@
+﻿@model IEnumerable<ListaPrecios_MVC.Models.Articulo>
+@{
+    ViewData["Title"] = "Lista de Precios";
+}
+
+<h2>Lista de PrecioS</h2>
+@if (TempData["Resultado"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Resultado"]
+    </div>
+}
+
+<form method="get" class=" row g-2 mb-3">
+
+    <div class="col -md-6">
+        <input name="buscar" value="@ViewBag.Buscar" class="form-control" placeholder="Buscar Articulo..." autofocus />
+
+    </div>
+
+    <div class="col -md-3">
+        <select name="proveedor" class="form-select">
+            <option value="">Todos los proveedores</option>
+            @foreach (var p in ViewBag.Proveedores)
+            {
+                <option valur="@p" selected="@(p == ViewBag.Proveedor)">@p</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <button class="btn btn-primary">Filtrar</button>
+        <a asp-action="Index" class="btn btn-secondary">Limpiar</a>
+        <a asp-action="Importar" class="btn btn-success">Importar</a>
+
+    </div>
+</form>
+
+<p>@Model.Count() articulos</p>
+
+<table class="table table-striped table-sm">
+    <thead>
+        <tr>
+            <th>Descripcion</th><th>Proveedor</th>
+            <th class="text-end">Sin Iva</th><th class="text-end">Precio Final</th>
+            <th>Actualizados</th>
+        </tr>
+
+    </thead>
+
+    <tbody>
+        @foreach(var a in Model)
+        {
+            <tr>
+                <td>@a.Descripcion</td>
+                <td>@a.Proveedor</td>
+                <td class="text-end">@a.PrecioSinIva.ToString("N2")</td>
+                    <td class="text-end">@a.PrecioFinal.ToString("N2")</td>
+                        <td>@a.FechaActualizacion.ToString("dd/MM/yyyy")</td>
+            </tr>
+        }
+
+    </tbody>
+
+</table>
