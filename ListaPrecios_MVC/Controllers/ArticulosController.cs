@@ -47,45 +47,52 @@ namespace ListaPrecios_MVC.Controllers
             proveedor = (proveedor ?? "").Trim();
             int creados = 0, actualizados = 0, sinCambios = 0, omitidos = 0;
             var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            using var stream = archivo.OpenReadStream();
-            using var libro = new XLWorkbook(stream);
-            var hoja = libro.Worksheet(1);
-            foreach (var fila in hoja.RowsUsed().Skip(1)) //salta los titulos
+            try
             {
-                var desc = fila.Cell(1).GetString().Trim();
-                if (string.IsNullOrEmpty(desc) || !vistos.Add(desc) || !LeerPrecio(fila.Cell(2), out var SinIva) || !LeerPrecio(fila.Cell(3), out var final))
-                { omitidos++; continue; }
-
-                var art = await _context.Articulos.FirstOrDefaultAsync(a => a.Descripcion == desc && a.Proveedor == proveedor);
-
-                if (art == null)
+                using var stream = archivo.OpenReadStream();
+                using var libro = new XLWorkbook(stream);
+                var hoja = libro.Worksheet(1);
+                foreach (var fila in hoja.RowsUsed().Skip(1)) //salta los titulos
                 {
-                    _context.Articulos.Add(new Articulo
+                    var desc = fila.Cell(1).GetString().Trim();
+                    if (string.IsNullOrEmpty(desc) || !vistos.Add(desc) || !LeerPrecio(fila.Cell(2), out var SinIva) || !LeerPrecio(fila.Cell(3), out var final))
+                    { omitidos++; continue; }
+
+                    var art = await _context.Articulos.FirstOrDefaultAsync(a => a.Descripcion == desc && a.Proveedor == proveedor);
+
+                    if (art == null)
                     {
-                        Descripcion = desc,
-                        Proveedor = proveedor,
-                        PrecioSinIva = SinIva,
-                        PrecioFinal = final,
-                        FechaActualizacion = DateTime.Now
+                        _context.Articulos.Add(new Articulo
+                        {
+                            Descripcion = desc,
+                            Proveedor = proveedor,
+                            PrecioSinIva = SinIva,
+                            PrecioFinal = final,
+                            FechaActualizacion = DateTime.Now
 
-                    });
-                    creados++;
+                        });
+                        creados++;
+                    }
+                    else if (art.PrecioSinIva != SinIva || art.PrecioFinal != final)
+                    {
+                        art.PrecioSinIva = SinIva;
+                        art.PrecioFinal = final;
+                        art.FechaActualizacion = DateTime.Now;
+                        actualizados++;
+                    }
+                    else sinCambios++;
                 }
-                else if (art.PrecioSinIva != SinIva || art.PrecioFinal != final)
-                {
-                    art.PrecioSinIva = SinIva;
-                    art.PrecioFinal = final;
-                    art.FechaActualizacion = DateTime.Now;
-                    actualizados++;
-                }
-                else sinCambios++;
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error al leer el archivo:" + ex.Message);
+                return View();
+            }
             TempData["Resultado"] = $"Creados: {creados} - Actualizados:{actualizados} - Sin Cambios: {sinCambios} - Omitidos: {omitidos}";
             return RedirectToAction(nameof(Index));
 
-        }
+            }
 
         //Acepta celdas numericas (con formato moneda) o texto tipo " $ 1.234,66"
         private static bool LeerPrecio(IXLCell celda, out decimal valor)

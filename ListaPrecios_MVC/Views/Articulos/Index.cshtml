@@ -43,7 +43,7 @@
         <tr>
             <th>Descripcion</th><th>Proveedor</th>
             <th class="text-end">Sin Iva</th><th class="text-end">Precio Final</th>
-            <th>Actualizados</th>
+            <th class="text-center ps-4">Actualizados</th>
         </tr>
 
     </thead>
@@ -56,7 +56,7 @@
                 <td>@a.Proveedor</td>
                 <td class="text-end">@a.PrecioSinIva.ToString("N2")</td>
                     <td class="text-end">@a.PrecioFinal.ToString("N2")</td>
-                        <td>@a.FechaActualizacion.ToString("dd/MM/yyyy")</td>
+                        <td class="text-center ps-4">@a.FechaActualizacion.ToString("dd/MM/yyyy")</td>
             </tr>
         }
 
