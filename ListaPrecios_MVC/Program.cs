@@ -8,6 +8,11 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<PreciosContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("PreciosDb")));
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<PreciosContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
