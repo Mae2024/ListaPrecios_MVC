@@ -6,6 +6,7 @@ using ListaPrecios_MVC.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Data;
+using DocumentFormat.OpenXml.Office2021.MipLabelMetaData;
 
 namespace ListaPrecios_MVC.Controllers
 {
@@ -20,8 +21,8 @@ namespace ListaPrecios_MVC.Controllers
 
             if (!string.IsNullOrWhiteSpace(buscar))
             {
-                foreach (var palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries)) 
-                query = query.Where(a => a.Descripcion.Contains(palabra));
+                foreach (var palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                    query = query.Where(a => a.Descripcion.Contains(palabra));
             }
             if (!string.IsNullOrWhiteSpace(proveedor))
                 query = query.Where(a => a.Proveedor == proveedor);
@@ -36,8 +37,16 @@ namespace ListaPrecios_MVC.Controllers
         public IActionResult Importar() => View();
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Importar(IFormFile archivo, string proveedor)
+        public async Task<IActionResult> Importar(IFormFile archivo, string proveedor, string clave)
         {
+            var claveCorrecta = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["ClaveImportar"];
+            if (string.IsNullOrEmpty(claveCorrecta) || clave != claveCorrecta)
+            {
+                ModelState.AddModelError("", "clave incorrecta.");
+                return View();
+
+            }
+
             if (archivo == null || archivo.Length == 0)
             {
                 ModelState.AddModelError("", "Elegi un archivo .xlsx");
@@ -92,7 +101,7 @@ namespace ListaPrecios_MVC.Controllers
             TempData["Resultado"] = $"Creados: {creados} - Actualizados:{actualizados} - Sin Cambios: {sinCambios} - Omitidos: {omitidos}";
             return RedirectToAction(nameof(Index));
 
-            }
+        }
 
         //Acepta celdas numericas (con formato moneda) o texto tipo " $ 1.234,66"
         private static bool LeerPrecio(IXLCell celda, out decimal valor)

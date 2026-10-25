@@ -1,4 +1,6 @@
-﻿@{ ViewData["Title"] = "Importar lista"; }
+﻿@{
+    ViewData["Title"] = "Importar lista";
+}
 
 <h2>Importar lista de precios</h2>
 <p>Excel con columnas: DESCRIPCION | P. SIN IVA | P. FINAL (primera fila = títulos)</p>
@@ -11,6 +13,10 @@
     </div>
     <div class="mb-3">
         <input type="file" name="archivo" accept=".xlsx" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Clave</label>
+        <input name="clave" type="password" class="form-control" required />
     </div>
     <button class="btn btn-success">Importar</button>
     <a asp-action="Index" class="btn btn-secondary">Volver</a>
