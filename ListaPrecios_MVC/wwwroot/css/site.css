@@ -1,31 +1,63 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    background: linear-gradient(180deg, #fbf6ec 0%, #f3e6cc 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+    color: var(--bs-secondary-color);
+    text-align: end;
 }
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    text-align: start;
 }
+/* ===== Menú principal ===== */
+.menu-principal {
+    background: linear-gradient(90deg, #7a1f2b 0%, #a8323e 100%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    border-bottom: 4px solid #f3d9a4;
+}
+
+    .menu-principal .marca {
+        font-weight: 800;
+        font-size: 1.4rem;
+        letter-spacing: 0.5px;
+        color: #fff;
+    }
+
+        .menu-principal .marca span {
+            color: #f3d9a4; /* "Lista" en crema */
+        }
+
+    .menu-principal .nav-link {
+        color: #fdf3e1 !important;
+        font-weight: 600;
+        border-radius: 20px;
+        padding: 6px 14px !important;
+        margin-left: 6px;
+        transition: background-color 0.2s;
+    }
+
+        .menu-principal .nav-link:hover {
+            background-color: rgba(243, 217, 164, 0.25);
+        }

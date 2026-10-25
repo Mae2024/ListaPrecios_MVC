@@ -19,12 +19,14 @@ namespace ListaPrecios_MVC.Controllers
         {
             var query = _context.Articulos.AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(buscar))
+            if (!string.IsNullOrWhiteSpace(buscar)) // filtro por texto
             {
                 foreach (var palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                    query = query.Where(a => a.Descripcion.Contains(palabra));
+                    query = query.Where(a => EF.Functions
+                    .Collate(a.Descripcion, "Modern_Spanish_CI_AI")
+                    .Contains(palabra));
             }
-            if (!string.IsNullOrWhiteSpace(proveedor))
+            if (!string.IsNullOrWhiteSpace(proveedor) && proveedor != "*") //filtro por proveedor
                 query = query.Where(a => a.Proveedor == proveedor);
 
             ViewBag.Buscar = buscar;
