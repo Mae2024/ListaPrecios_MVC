@@ -31,6 +31,13 @@ namespace ListaPrecios_MVC.Controllers
             ViewBag.Proveedor = proveedor;
             ViewBag.Proveedores = await _context.Articulos
                 .Select(a => a.Proveedor).Distinct().OrderBy(p => p).ToListAsync();
+
+            if (String.IsNullOrWhiteSpace(buscar) && string.IsNullOrWhiteSpace(proveedor))
+            {
+                ViewBag.SinFiltro = true;
+                return View(new List<Articulo>());
+            }
+
             return View(await query.OrderBy(a => a.Descripcion).ToListAsync());
         }
 

@@ -35,31 +35,44 @@
 
     </div>
 </form>
+@if (ViewBag.SinFiltro == true)
+{
+    <p class="text-muted">Escribí el nombre de un artículo o elegí un proveedor para ver los precios.</p>
+}
+else if (!Model.Any())
+{
+    <p class="text-muted">No se encontraron artículos.</p>
+}
+else
+{
 
-<p>@Model.Count() articulos</p>
+    <p>@Model.Count() articulos</p>
 
-<table class="table table-striped table-sm">
-    <thead>
-        <tr>
-            <th>Descripcion</th><th>Proveedor</th>
-            <th class="text-end">Sin Iva</th><th class="text-end">Precio Final</th>
-            <th class="text-center ps-4">Actualizados</th>
-        </tr>
-
-    </thead>
-
-    <tbody>
-        @foreach(var a in Model)
-        {
+    <table class="table table-striped table-sm">
+        <thead>
             <tr>
-                <td>@a.Descripcion</td>
-                <td>@a.Proveedor</td>
-                <td class="text-end">@a.PrecioSinIva.ToString("N2")</td>
-                    <td class="text-end">@a.PrecioFinal.ToString("N2")</td>
-                        <td class="text-center ps-4">@a.FechaActualizacion.ToString("dd/MM/yyyy")</td>
+                <th>Descripcion</th>
+                <th>Proveedor</th>
+                <th class="text-end">Sin Iva</th>
+                <th class="text-end">Precio Final</th>
+                <th class="text-center ps-4">Actualizados</th>
             </tr>
-        }
 
-    </tbody>
+        </thead>
 
-</table>
+        <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>@a.Descripcion</td>
+                    <td>@a.Proveedor</td>
+                    <td class="text-end">@a.PrecioSinIva.ToString("N2")</td>
+                    <td class="text-end">@a.PrecioFinal.ToString("N2")</td>
+                    <td class="text-center ps-4">@a.FechaActualizacion.ToString("dd/MM/yyyy")</td>
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+}
