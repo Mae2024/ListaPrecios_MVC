@@ -61,3 +61,78 @@ body {
         .menu-principal .nav-link:hover {
             background-color: rgba(243, 217, 164, 0.25);
         }
+
+    body{                                       /*base*/
+        font-family:"Nunito", sans-serif;
+
+    }
+    h2{
+        font-weight: 800;
+        color: #7a1f2b;
+    }
+
+    /*botones con los colores de la app*/
+
+    .btn-primary{
+        background-color:#a8323e;
+        border-color: #a8323e;
+    }
+    .btn-primary:hover, .btn-primary:focus{
+        background-color: #7a1f2b;
+        border-color: #7a1f2b;
+    }
+    .btn{
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    /*Buscador*/
+
+.buscador {
+    background-color: #fdf331;
+    border: 1px solid #f3d9a4;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+    .busc .form-control, .buscador .form-select {
+        border-radius: 20px;
+    }
+/*tabla PC*/
+
+.tabla-precios thead th {
+    background-color: #7a1f2b;
+    color:#fff;
+    border: none;
+}
+.tabla-precios tbody tr:hover {
+    background-color: #fdf331;
+}
+
+/*tarjetas(celular)*/
+.art-card {
+    background-color: #fff;
+    border-left: 5px solid #a8323e;
+    border-radius:10px;
+    padding: 12px 14px;
+    margin-bottom:10px;
+    box-shadow: 1px 6px rgba(0, 0, 0, 0.08);
+}
+    .art-card .desc {
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .art-card .precio {
+        font-size:1.5rem;
+        font-weight: 800;
+        color: #7a1f2b;
+    }
+
+    .art-card .detalle {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+.badge-prov {
+    background-color: #f3d9a4;
+    color: #7a1f2b;
+    font-weight: 700;
+}
