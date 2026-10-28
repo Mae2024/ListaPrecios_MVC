@@ -112,6 +112,47 @@ namespace ListaPrecios_MVC.Controllers
 
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Editar(int id) 
+        {
+            var art = await _context.Articulos.FindAsync(id);
+            if (art == null) return NotFound();
+            return View(art);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Editar(int id, string descripcion, decimal precioSinIva, decimal PrecioFinal, string clave)
+        {
+            var art = await _context.Articulos.FindAsync(id);
+            if (art == null) return NotFound();
+
+            var claveCorrecta = HttpContext.RequestServices
+                .GetRequiredService<IConfiguration>()["ClaveImportar"];
+            if(string.IsNullOrEmpty(claveCorrecta) || clave != claveCorrecta)
+            {
+                ModelState.AddModelError("", "Clave  incorrecta");
+                return View(art);
+            }
+            if (string.IsNullOrWhiteSpace(descripcion) || PrecioFinal <= 0)
+            {
+                ModelState.AddModelError("", "La descripcion y el precio final son obligatorios");
+                return View(art);
+            }
+            art.Descripcion = descripcion.Trim();
+            art.PrecioSinIva = Math.Round(precioSinIva, 2);
+            art.PrecioFinal = Math.Round(PrecioFinal, 2);
+            art.FechaActualizacion = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            TempData["Resultado"] = $"Se actualizó: {art.Descripcion}";
+            return RedirectToAction(nameof(Index), new { buscar = art.Descripcion });
+
+        }
+
+
+
+
+
         //Acepta celdas numericas (con formato moneda) o texto tipo " $ 1.234,66"
         private static bool LeerPrecio(IXLCell celda, out decimal valor)
         {
