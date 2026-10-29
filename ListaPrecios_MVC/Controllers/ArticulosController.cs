@@ -13,7 +13,9 @@ namespace ListaPrecios_MVC.Controllers
     public class ArticulosController : Controller
     {
         private readonly PreciosContext _context;
-        public ArticulosController(PreciosContext context) => _context = context;
+        public ArticulosController(PreciosContext context) => _context = context;   //la forma corta de escribir el constructor sin llaves{}
+
+
 
         public async Task<IActionResult> Index(string? buscar, string? proveedor)
         {
@@ -43,13 +45,17 @@ namespace ListaPrecios_MVC.Controllers
             return View(await query.OrderBy(a => a.Descripcion).ToListAsync());
         }
 
+
+        [HttpGet]
         public IActionResult Importar() => View();
 
+        
+        
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Importar(IFormFile archivo, string proveedor, string clave)
         {
             var claveCorrecta = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["ClaveImportar"];
-            if (string.IsNullOrEmpty(claveCorrecta) || clave != claveCorrecta)
+            if (!ClaveValida(clave))
             {
                 ModelState.AddModelError("", "clave incorrecta.");
                 return View();
@@ -112,6 +118,59 @@ namespace ListaPrecios_MVC.Controllers
 
         }
 
+
+        [HttpGet]
+        public async Task<IActionResult> Crear()
+        {
+            ViewBag.Proveedores = await _context.Articulos
+                .Select(a => a.Proveedor).Distinct().OrderBy(p => p).ToListAsync();
+            return View();
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Crear(string descripcion, string proveedor, decimal precioSinIva, decimal precioFinal, string clave)
+        {
+            descripcion = (descripcion ?? "").Trim();
+            proveedor = (proveedor ?? "").Trim();
+
+            if (!ClaveValida(clave))
+                ModelState.AddModelError("", "Clave incorrecta.");
+            else if (descripcion == "" || proveedor == "" || precioFinal <= 0)
+                ModelState.AddModelError("", "Descripción, proveedor y precio final son obligatorios.");
+            else if (await _context.Articulos.AnyAsync(a => a.Descripcion == descripcion && a.Proveedor == proveedor))
+                ModelState.AddModelError("", "Ya existe ese articulo para ese proveedor, usa modif. para cambiar el precio.");
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Descripcion = descripcion;
+                ViewBag.ProveedorElegido = proveedor;
+                ViewBag.Proveedores = await _context.Articulos
+                    .Select(a => a.Proveedor).Distinct().OrderBy(p => p).ToArrayAsync();
+                return View();
+            }
+
+            var art = new Articulo
+            {
+                Descripcion = descripcion,
+                Proveedor = proveedor,
+                PrecioSinIva = Math.Round(precioSinIva, 2),
+                PrecioFinal = Math.Round(precioFinal, 2),
+                FechaActualizacion = DateTime.Now
+
+            };
+
+            _context.Articulos.Add(art);
+            await _context.SaveChangesAsync();
+
+            TempData["Resultado"] = $"Se agrego {art.Descripcion}";
+            return RedirectToAction(nameof(Index), new { buscar = art.Descripcion });
+
+
+        }
+
+
+
+        
         [HttpGet]
         public async Task<IActionResult> Editar(int id) 
         {
@@ -120,15 +179,16 @@ namespace ListaPrecios_MVC.Controllers
             return View(art);
         }
 
+        
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int id, string descripcion, decimal precioSinIva, decimal PrecioFinal, string clave)
         {
             var art = await _context.Articulos.FindAsync(id);
-            if (art == null) return NotFound();
+            if (art == null) return NotFound();  //resume: {return ...}
 
             var claveCorrecta = HttpContext.RequestServices
                 .GetRequiredService<IConfiguration>()["ClaveImportar"];
-            if(string.IsNullOrEmpty(claveCorrecta) || clave != claveCorrecta)
+            if(!ClaveValida(clave))
             {
                 ModelState.AddModelError("", "Clave  incorrecta");
                 return View(art);
@@ -144,15 +204,13 @@ namespace ListaPrecios_MVC.Controllers
             art.FechaActualizacion = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            TempData["Resultado"] = $"Se actualizó: {art.Descripcion}";
+            TempData["Resultado"] = $"Se actualizó: {art.Descripcion}";  //usar $"...{}" es lo mismo que usar: "se actualizo: " + art.Descripcion
             return RedirectToAction(nameof(Index), new { buscar = art.Descripcion });
 
         }
 
-
-
-
-
+        
+        
         //Acepta celdas numericas (con formato moneda) o texto tipo " $ 1.234,66"
         private static bool LeerPrecio(IXLCell celda, out decimal valor)
         {
@@ -160,6 +218,16 @@ namespace ListaPrecios_MVC.Controllers
             var texto = celda.GetString().Replace("$", "").Trim();
             return decimal.TryParse(texto, NumberStyles.Number, new CultureInfo("es-AR"), out valor);
 
+        }
+
+
+
+        //Validar clave para importar, editar y crear
+        private bool ClaveValida(string? clave)
+        {
+            var claveCorrecta = HttpContext.RequestServices
+                .GetRequiredService<IConfiguration>()["claveImportar"];
+            return !string.IsNullOrEmpty(claveCorrecta) && clave == claveCorrecta;
         }
     }
 }
