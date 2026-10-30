@@ -1,0 +1,105 @@
+﻿@model List<ListaPrecios_MVC.Models.Pedido>
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Pedidos</title>
+    <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                color: #000;
+            }
+
+            .hoja {
+                page-break-after: always;
+                margin-bottom: 40px;
+            }
+
+                .hoja:last-child {
+                    page-break-after: auto;
+                }
+
+            h2 {
+                margin: 0 0 4px 0;
+            }
+
+            .datos {
+                margin-bottom: 12px;
+                font-size: 14px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+
+            th, td {
+                border: 1px solid #000;
+                padding: 6px 8px;
+                text-align: left;
+            }
+
+            .cantidad {
+                width: 110px;
+                text-align: right;
+            }
+
+            .boton-imprimir {
+                padding: 10px 20px;
+                font-size: 16px;
+                margin-bottom: 20px;
+            }
+
+            @@media print {
+                .boton-imprimir {
+                    display: none;
+                }
+            }
+    </style>
+</head>
+<body>
+
+    <button class="boton-imprimir" onclick="window.print()">🖨️ Imprimir</button>
+
+    @if (Model.Count == 0)
+    {
+        <p>No hay pedidos para imprimir.</p>
+    }
+
+    @foreach (var p in Model)
+    {
+        <div class="hoja">
+            <h2>@p.Cliente?.Nombre</h2>
+            <div class="datos">
+                @p.Cliente?.Direccion<br />
+                Fecha: @p.Fecha.ToString("dd/MM/yyyy") · Pedido #@p.Id
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Artículo</th>
+                        <th class="cantidad">Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in p.Items.OrderBy(i => i.Id))
+                    {
+                        <tr>
+                            <td>@item.Descripcion</td>
+                            <td class="cantidad">@item.Cantidad.ToString("0.###")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</body>
+</html>

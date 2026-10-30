@@ -84,7 +84,9 @@ namespace ListaPrecios_MVC.Controllers
         }
 
 
-        // GET: /Pedidos/Editar/5?buscar=jamon
+
+
+                // GET: /Pedidos/Editar/5?buscar=jamon
         [HttpGet]
         public async Task<IActionResult> Editar(int id, string? buscar)
         {
@@ -122,7 +124,9 @@ namespace ListaPrecios_MVC.Controllers
 
             return View(pedido);
         }
-        // POST: /Pedidos/AgregarItem
+       
+        
+                // POST: /Pedidos/AgregarItem
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> AgregarItem(int pedidoId, int articuloId, string? cantidad)
         {
@@ -158,7 +162,9 @@ namespace ListaPrecios_MVC.Controllers
             return RedirectToAction("Editar", new { id = pedidoId });
         }
 
-        // POST: /Pedidos/QuitarItem
+                
+        
+                // POST: /Pedidos/QuitarItem
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> QuitarItem(int id)
         {
@@ -177,6 +183,58 @@ namespace ListaPrecios_MVC.Controllers
             TempData["Resultado"] = "Se quitó: " + item.Descripcion;
             return RedirectToAction("Editar", new { id = pedidoId });
         }
+
+
+
+                // GET: /Pedidos?fecha=2026-10-30
+        [HttpGet]
+        public async Task<IActionResult> Index(DateTime? fecha)
+        {
+            DateTime dia;
+            if (fecha.HasValue)
+            {
+                dia = fecha.Value.Date;
+            }
+            else
+            {
+                dia = DateTime.Today;
+            }
+
+            List<Pedido> pedidos = await PedidosDelDia(dia);
+
+            ViewBag.Fecha = dia;
+            return View(pedidos);
+        }
+
+        // GET: /Pedidos/Imprimir/5   → un solo pedido
+        [HttpGet]
+        public async Task<IActionResult> Imprimir(int id)
+        {
+            Pedido? pedido = await _context.Pedidos
+                .Include(p => p.Cliente)
+                .Include(p => p.Items)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pedido == null)
+            {
+                return NotFound();
+            }
+
+            List<Pedido> lista = new List<Pedido>();
+            lista.Add(pedido);
+
+            return View("Imprimir", lista);
+        }
+
+           // GET: /Pedidos/ImprimirDia?fecha=2026-10-30   → todos los del día
+        [HttpGet]
+        public async Task<IActionResult> ImprimirDia(DateTime fecha)
+        {
+            List<Pedido> pedidos = await PedidosDelDia(fecha.Date);
+            return View("Imprimir", pedidos);
+        }
+
+
 
         // Convierte "5,54" o "5.54" en 5.54
         private static bool LeerDecimal(string? texto, out decimal valor)
@@ -199,5 +257,65 @@ namespace ListaPrecios_MVC.Controllers
                 .Select(c => c.Nombre)
                 .ToListAsync();
         }
+        private async Task<List<Pedido>> PedidosDelDia(DateTime dia)
+        {
+            DateTime diaSiguiente = dia.AddDays(1);
+
+            List<Pedido> pedidos = await _context.Pedidos
+                .Include(p => p.Cliente)
+                .Include(p => p.Items)
+                .Where(p => p.Fecha >= dia && p.Fecha < diaSiguiente)
+                .OrderBy(p => p.Fecha)
+                .ToListAsync();
+
+            return pedidos;
+        }
+            
+        
+        
+        
+                // GET: /Pedidos/Eliminar/5   → muestra la confirmación
+        [HttpGet]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            Pedido? pedido = await _context.Pedidos
+                .Include(p => p.Cliente)
+                .Include(p => p.Items)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pedido == null)
+            {
+                return NotFound();
+            }
+
+            return View(pedido);
+        }
+
+
+
+                // POST: /Pedidos/Eliminar/5   → borra de verdad
+        [HttpPost, ValidateAntiForgeryToken]
+        [ActionName("Eliminar")]
+        public async Task<IActionResult> EliminarConfirmado(int id)
+        {
+            Pedido? pedido = await _context.Pedidos
+                .Include(p => p.Items)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pedido == null)
+            {
+                return NotFound();
+            }
+
+            DateTime fechaDelPedido = pedido.Fecha.Date;
+
+            _context.PedidoItems.RemoveRange(pedido.Items);   // primero las líneas
+            _context.Pedidos.Remove(pedido);                  // después el pedido
+            await _context.SaveChangesAsync();
+
+            TempData["Resultado"] = "Se eliminó el pedido #" + id;
+            return RedirectToAction("Index", new { fecha = fechaDelPedido.ToString("yyyy-MM-dd") });
+        }
+
     }
 }

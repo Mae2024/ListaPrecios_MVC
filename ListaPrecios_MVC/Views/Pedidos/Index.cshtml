@@ -1,0 +1,52 @@
+﻿@model List<ListaPrecios_MVC.Models.Pedido>
+@{
+    ViewData["Title"] = "Pedidos";
+    DateTime fecha = ViewBag.Fecha;
+}
+
+<h2>Pedidos</h2>
+
+@if (TempData["Resultado"] != null)
+{
+    <div class="alert alert-success py-2">@TempData["Resultado"]</div>  //muestra que se elimino el pedido #...
+}
+
+
+<form asp-action="Index" method="get" class="d-flex gap-2 buscador">
+    <input type="date" name="fecha" value="@fecha.ToString("yyyy-MM-dd")" class="form-control" />
+    <button class="btn btn-primary">Ver</button>
+</form>
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">No hay pedidos el @fecha.ToString("dd/MM/yyyy").</p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span>@Model.Count pedidos</span>
+        <a asp-action="ImprimirDia" asp-route-fecha="@fecha.ToString("yyyy-MM-dd")"
+           target="_blank" class="btn btn-outline-secondary">🖨️ Imprimir todos</a>
+    </div>
+
+    @foreach (var p in Model)
+    {
+        decimal totalPedido = p.Items.Sum(i => i.SubTotal);
+
+        <div class="art-card d-flex justify-content-between align-items-center">
+            <a asp-action="Editar" asp-route-id="@p.Id" class="text-decoration-none text-dark flex-grow-1">
+                <div class="desc mb-1">@p.Cliente?.Nombre</div>
+                <div class="detalle">
+                    #@p.Id · @p.Fecha.ToString("HH:mm") · @p.Items.Count artículos
+                </div>
+            </a>
+            <div class="text-end">
+                <div class="fw-bold">$ @totalPedido.ToString("N2")</div>
+                <a asp-action="Imprimir" asp-route-id="@p.Id" target="_blank"
+                   class="btn btn-sm btn-outline-secondary mt-1">🖨️</a>
+            </div>
+        </div>
+    }
+}
+
+<a asp-action="Nuevo" class="btn btn-primary w-100 mt-3">🧾 Nuevo pedido</a>

@@ -1,0 +1,23 @@
+﻿@model ListaPrecios_MVC.Models.Pedido
+@{
+    ViewData["Title"] = "Eliminar pedido";
+    decimal total = Model.Items.Sum(i => i.SubTotal);
+}
+
+<h2>Eliminar pedido</h2>
+
+<div class="alert alert-danger">
+    ¿Seguro que querés eliminar este pedido? <strong>No se puede deshacer.</strong>
+</div>
+
+<div class="buscador">
+    <div class="fw-bold fs-5">@Model.Cliente?.Nombre</div>
+    <div class="text-muted">Pedido #@Model.Id · @Model.Fecha.ToString("dd/MM/yyyy HH:mm")</div>
+    <div class="mt-2">@Model.Items.Count artículos · Total $ @total.ToString("N2")</div>
+</div>
+
+<form asp-action="Eliminar" asp-route-id="@Model.Id" method="post">
+    <button class="btn btn-danger w-100">🗑️ Sí, eliminar pedido</button>
+</form>
+
+<a asp-action="Editar" asp-route-id="@Model.Id" class="btn btn-secondary w-100 mt-2">Cancelar</a>
