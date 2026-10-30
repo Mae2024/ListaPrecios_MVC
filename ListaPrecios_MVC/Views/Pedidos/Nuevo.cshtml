@@ -1,0 +1,42 @@
+﻿@{
+    ViewData["Title"] = "Nuevo pedido";
+}
+
+<h2>Nuevo pedido</h2>
+
+<form asp-action="Nuevo" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="buscador">
+        <label class="form-label fw-bold">Cliente</label>
+        <input name="cliente" list="listaClientes" class="form-control"
+               placeholder="Escribí el nombre del cliente" autocomplete="off" />
+        <datalist id="listaClientes">
+            @foreach (var nombre in ViewBag.Clientes)
+            {
+                <option value="@nombre"></option>
+            }
+        </datalist>
+    </div>
+
+    <p>
+        <a class="link-secondary" data-bs-toggle="collapse" href="#clienteNuevo">
+            ➕ ¿No está en la lista? Crear cliente nuevo
+        </a>
+    </p>
+
+    <div class="collapse mb-3" id="clienteNuevo">
+        <div class="buscador">
+            <div class="mb-2">
+                <label class="form-label">Nombre del cliente nuevo</label>
+                <input name="nuevoNombre" class="form-control" />
+            </div>
+            <div>
+                <label class="form-label">Dirección</label>
+                <input name="nuevaDireccion" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-100">Empezar pedido</button>
+</form>

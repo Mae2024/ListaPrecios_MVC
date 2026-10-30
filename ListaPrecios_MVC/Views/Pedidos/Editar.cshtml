@@ -1,0 +1,14 @@
+﻿@model ListaPrecios_MVC.Models.Pedido
+@{
+    ViewData["Title"] = "Pedido";
+}
+
+<h2>Pedido #@Model.Id</h2>
+
+<div class="buscador">
+    <div class="fw-bold fs-5">@Model.Cliente?.Nombre</div>
+    <div class="text-muted">@Model.Cliente?.Direccion</div>
+    <div class="text-muted">@Model.Fecha.ToString("dd/MM/yyyy HH:mm")</div>
+</div>
+
+<p class="text-muted">Acá vamos a agregar los artículos (paso 3b).</p>
