@@ -1,14 +1,98 @@
 ﻿@model ListaPrecios_MVC.Models.Pedido
 @{
     ViewData["Title"] = "Pedido";
+    List<ListaPrecios_MVC.Models.Articulo> resultados = ViewBag.Resultados;
+    decimal total = Model.Items.Sum(i => i.SubTotal);
 }
 
-<h2>Pedido #@Model.Id</h2>
-
-<div class="buscador">
-    <div class="fw-bold fs-5">@Model.Cliente?.Nombre</div>
-    <div class="text-muted">@Model.Cliente?.Direccion</div>
-    <div class="text-muted">@Model.Fecha.ToString("dd/MM/yyyy HH:mm")</div>
+@* Encabezado fijo: cliente y total *@
+<div class="buscador total-pedido d-flex justify-content-between align-items-center">
+    <div>
+        <div class="fw-bold fs-5">@Model.Cliente?.Nombre</div>
+        <div class="text-muted small">Pedido #@Model.Id · @Model.Fecha.ToString("dd/MM/yyyy HH:mm")</div>
+    </div>
+    <div class="text-end">
+        <div class="small text-muted">TOTAL</div>
+        <div class="precio fs-1">$ @total.ToString("N2")</div>
+    </div>
 </div>
 
-<p class="text-muted">Acá vamos a agregar los artículos (paso 3b).</p>
+@if (TempData["Resultado"] != null)
+{
+    <div class="alert alert-success py-2">@TempData["Resultado"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger py-2">@TempData["Error"]</div>
+
+}
+
+
+    @* Buscador de artículos *@
+    <form asp-action="Editar" asp-route-id="@Model.Id" method="get" class="d-flex gap-2 mb-3">
+        <input name="buscar" value="@ViewBag.Buscar" class="form-control"
+        placeholder="Buscar artículo para agregar" autofocus />
+        <button class="btn btn-primary">🔎</button>
+    </form>
+
+
+
+    @* Resultados de la búsqueda *@
+    @if (resultados.Count > 0)
+    {
+        @foreach (var a in resultados)
+        {
+            <div class="art-card">
+                <div class="desc">@a.Descripcion</div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold">$ @a.PrecioFinal.ToString("N2")</span>
+                        <span class="badge badge-prov ms-1">@a.Proveedor</span>
+                    </div>
+                    <form asp-action="AgregarItem" method="post" class="d-flex gap-1">
+                        <input type="hidden" name="pedidoId" value="@Model.Id" />
+                        <input type="hidden" name="articuloId" value="@a.Id" />
+                        <input name="cantidad" inputmode="decimal" placeholder="Cant."
+                        class="form-control form-control-sm" style="width: 80px" required />
+                        <button class="btn btn-sm btn-primary">➕</button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else if (!string.IsNullOrWhiteSpace(ViewBag.Buscar))
+    {
+        <p class="text-muted">No se encontraron artículos.</p>
+    }
+
+
+
+    @* Líneas del pedido *@
+    <h5 class="mt-4">Artículos del pedido (@Model.Items.Count)</h5>
+
+    @if (Model.Items.Count == 0)
+    {
+        <p class="text-muted">Todavía no agregaste artículos.</p>
+    }
+    else
+    {
+        @foreach (var item in Model.Items.OrderBy(i => i.Id))
+        {
+            <div class="art-card d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="desc mb-1">@item.Descripcion</div>
+                    <div class="detalle">
+                        @item.Cantidad.ToString("0.###") × $ @item.PrecioUnitario.ToString("N2")
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold">$ @item.SubTotal.ToString("N2")</div>
+                    <form asp-action="QuitarItem" asp-route-id="@item.Id" method="post">
+                        <button class="btn btn-sm btn-outline-danger mt-1">🗑️</button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+}
+<a asp-action="Nuevo" class="btn btn-secondary w-100 mt-3">✔ Terminar pedido</a>

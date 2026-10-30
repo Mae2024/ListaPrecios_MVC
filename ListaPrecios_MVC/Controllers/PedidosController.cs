@@ -3,6 +3,7 @@ using ListaPrecios_MVC.DATA;
 using ListaPrecios_MVC.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace ListaPrecios_MVC.Controllers
 {
@@ -82,9 +83,10 @@ namespace ListaPrecios_MVC.Controllers
             return RedirectToAction("Editar", new { id = pedido.Id });
         }
 
-        // GET: /Pedidos/Editar/5   (en la 3b se completa con los artículos)
+
+        // GET: /Pedidos/Editar/5?buscar=jamon
         [HttpGet]
-        public async Task<IActionResult> Editar(int id)
+        public async Task<IActionResult> Editar(int id, string? buscar)
         {
             Pedido? pedido = await _context.Pedidos
                 .Include(p => p.Cliente)
@@ -96,7 +98,98 @@ namespace ListaPrecios_MVC.Controllers
                 return NotFound();
             }
 
+            List<Articulo> resultados = new List<Articulo>();
+
+            if (!string.IsNullOrWhiteSpace(buscar))
+            {
+                IQueryable<Articulo> query = _context.Articulos;
+
+                foreach (string palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Where(a => EF.Functions
+                        .Collate(a.Descripcion, "Modern_Spanish_CI_AI")
+                        .Contains(palabra));
+                }
+
+                resultados = await query
+                    .OrderBy(a => a.Descripcion)
+                    .Take(30)
+                    .ToListAsync();
+            }
+
+            ViewBag.Buscar = buscar;
+            ViewBag.Resultados = resultados;
+
             return View(pedido);
+        }
+        // POST: /Pedidos/AgregarItem
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarItem(int pedidoId, int articuloId, string? cantidad)
+        {
+            decimal cantidadNumero;
+            bool cantidadValida = LeerDecimal(cantidad, out cantidadNumero);
+
+            if (!cantidadValida || cantidadNumero <= 0)
+            {
+                TempData["Error"] = "Poné una cantidad mayor a cero.";
+                return RedirectToAction("Editar", new { id = pedidoId });
+            }
+
+            Pedido? pedido = await _context.Pedidos.FindAsync(pedidoId);
+            Articulo? articulo = await _context.Articulos.FindAsync(articuloId);
+
+            if (pedido == null || articulo == null)
+            {
+                return NotFound();
+            }
+
+            PedidoItem item = new PedidoItem();
+            item.PedidoId = pedido.Id;
+            item.Descripcion = articulo.Descripcion;
+            item.Proveedor = articulo.Proveedor;
+            item.Cantidad = Math.Round(cantidadNumero, 3);
+            item.PrecioUnitario = articulo.PrecioFinal;
+            item.SubTotal = Math.Round(item.Cantidad * item.PrecioUnitario, 2);
+
+            _context.PedidoItems.Add(item);
+            await _context.SaveChangesAsync();
+
+            TempData["Resultado"] = "Agregado: " + item.Descripcion;
+            return RedirectToAction("Editar", new { id = pedidoId });
+        }
+
+        // POST: /Pedidos/QuitarItem
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuitarItem(int id)
+        {
+            PedidoItem? item = await _context.PedidoItems.FindAsync(id);
+
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            int pedidoId = item.PedidoId;
+
+            _context.PedidoItems.Remove(item);
+            await _context.SaveChangesAsync();
+
+            TempData["Resultado"] = "Se quitó: " + item.Descripcion;
+            return RedirectToAction("Editar", new { id = pedidoId });
+        }
+
+        // Convierte "5,54" o "5.54" en 5.54
+        private static bool LeerDecimal(string? texto, out decimal valor)
+        {
+            valor = 0;
+
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return false;
+            }
+
+            string limpio = texto.Trim().Replace(",", ".");
+            return decimal.TryParse(limpio, NumberStyles.Number, CultureInfo.InvariantCulture, out valor);
         }
 
         private async Task CargarClientesEnViewBag()

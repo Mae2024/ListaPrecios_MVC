@@ -1,6 +1,14 @@
 html {
     font-size: 14px;
 }
+/*Total fijo arriba en el pedido */
+.total-pedido {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+
 
 @media (min-width: 768px) {
     html {
