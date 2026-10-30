@@ -1,0 +1,35 @@
+﻿@model List<ListaPrecios_MVC.Models.Cliente>
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<h2>Clientes</h2>
+
+@if (TempData["Resultado"] != null)
+{
+    <div class="alert alert-success">@TempData["Resultado"]</div>
+}
+
+<p>
+    <a asp-action="Importar" class="btn btn-primary">📥 Importar clientes</a>
+</p>
+
+<p>@Model.Count clientes</p>
+
+<table class="table table-sm tabla-precios">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Dirección</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>@c.Nombre</td>
+                <td>@c.Direccion</td>
+            </tr>
+        }
+    </tbody>
+</table>
