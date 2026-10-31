@@ -2,11 +2,13 @@
 using ListaPrecios_MVC;
 using ListaPrecios_MVC.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 
 namespace ListaPrecios_MVC.DATA
 {
-    public class PreciosContext : DbContext
+    public class PreciosContext : IdentityDbContext<IdentityUser>
     {
         public PreciosContext(DbContextOptions<PreciosContext> options) : base (options) { }
         public DbSet<Articulo> Articulos => Set<Articulo>();
