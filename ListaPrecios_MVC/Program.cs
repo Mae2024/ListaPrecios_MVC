@@ -38,6 +38,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PreciosContext>();
     db.Database.Migrate();
+
+    await SeedIdentidad.Inicializar(scope.ServiceProvider);
 }
 
 // Configure the HTTP request pipeline.
