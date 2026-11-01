@@ -44,6 +44,23 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Articulos" asp-action="Importar">📥 Importar lista</a>
                         </li>
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item d-flex align-items-center">
+                        <span class="nav-link">👤 @User.Identity.Name</span>
+                            </li>
+                        <li class="nav-item">
+                            <form asp-controller="Cuenta" asp-action="Logout" method="post" class="d-inline">
+                                <button class="nav-link btn btn-link">🚪 Salir</button>
+                            </form>
+                        </li>
+                        }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Cuenta" asp-action="Login">🔑 Entrar</a>
+                        </li>
+                    }
                     </ul>
                 </div>
             </div>

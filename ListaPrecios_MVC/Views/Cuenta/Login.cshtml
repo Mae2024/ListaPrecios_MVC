@@ -1,0 +1,30 @@
+﻿@model ListaPrecios_MVC.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Entrar";
+}
+
+<div class="mx-auto" style="max-width: 400px">
+    <h2 class="text-center mb-3">Entrar</h2>
+
+    <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post" class="buscador">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="Usuario" class="form-label"></label>
+            <input asp-for="Usuario" class="form-control" autocomplete="username" autocapitalize="none" autofocus />
+            <span asp-validation-for="Usuario" class="text-bg-danger small"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Clave" class="form-label"></label>
+            <input asp-for="Clave" class="form-control" autocomplete="current-password" />
+            <span asp-validation-for="Clave" class="text-danger small"></span>
+        </div>
+        <div class="form-check mb-3">
+            <input asp-for="Recordarme" class="form-check-input" />
+            <label asp-for="Recordarme" class="form-check-label"></label>
+        </div>
+
+        <button class="btn btn-primary w-100">Entrar</button>
+
+    </form>
+
+</div>
