@@ -76,10 +76,15 @@ namespace ListaPrecios_MVC.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("VendedorId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Nombre")
                         .IsUnique();
+
+                    b.HasIndex("VendedorId");
 
                     b.ToTable("Clientes");
                 });
@@ -98,9 +103,14 @@ namespace ListaPrecios_MVC.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("VendedorId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
+
+                    b.HasIndex("VendedorId");
 
                     b.ToTable("Pedidos");
                 });
@@ -343,6 +353,15 @@ namespace ListaPrecios_MVC.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ListaPrecios_MVC.Models.Cliente", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Vendedor")
+                        .WithMany()
+                        .HasForeignKey("VendedorId");
+
+                    b.Navigation("Vendedor");
+                });
+
             modelBuilder.Entity("ListaPrecios_MVC.Models.Pedido", b =>
                 {
                     b.HasOne("ListaPrecios_MVC.Models.Cliente", "Cliente")
@@ -351,7 +370,13 @@ namespace ListaPrecios_MVC.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Vendedor")
+                        .WithMany()
+                        .HasForeignKey("VendedorId");
+
                     b.Navigation("Cliente");
+
+                    b.Navigation("Vendedor");
                 });
 
             modelBuilder.Entity("ListaPrecios_MVC.Models.PedidoItem", b =>

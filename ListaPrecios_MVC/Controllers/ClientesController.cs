@@ -3,45 +3,80 @@ using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 using ListaPrecios_MVC.DATA;
 using ListaPrecios_MVC.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace ListaPrecios_MVC.Controllers
 {
+    [Authorize]
     public class ClientesController : Controller
     {
         private readonly PreciosContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public ClientesController(PreciosContext context)
-        { 
+        public ClientesController(PreciosContext context, UserManager<IdentityUser> userManager)
+        {
             _context = context;
+            _userManager = userManager;
         }
 
-        [HttpGet] //Get: //Clientes
-        public async Task<IActionResult> Index()
+        [HttpGet] // get index
+        public async Task<IActionResult> Index(string? vendedor)
         {
-            List<Cliente> clientes = await _context.Clientes
-                .OrderBy(c => c.Nombre)
-                .ToListAsync();
+            IQueryable<Cliente> query = _context.Clientes.Include(c => c.Vendedor);
+
+            if (User.IsInRole("Admin"))
+            {
+                if (!string.IsNullOrEmpty(vendedor))
+                {
+                    query = query.Where(c => c.VendedorId == vendedor);
+                }
+                await CargarVendedoresEnViewBag();
+            }
+            else
+            {
+                string? usuarioId = _userManager.GetUserId(User);
+                query = query.Where(c => c.VendedorId == usuarioId);
+            }
+
+            List<Cliente> clientes = await query.OrderBy(c => c.Nombre).ToListAsync();
+
+            ViewBag.Vendedor = vendedor;
             return View(clientes);
         }
 
-        [HttpGet] //Get: //Clientes/Importar
-        public IActionResult Importar()
+
+        //Get: //Clientes/Importar
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Importar()
         {
+            await CargarVendedoresEnViewBag();
             return View();
         }
 
-        [HttpPost, ValidateAntiForgeryToken]  //Post: //Clientes/Importar
-
-        public async Task<IActionResult> Importar (IFormFile archivo, string clave)
+        //Post: //Clientes/Importar
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Importar(IFormFile archivo, string? vendedorId)
         {
-            if (!ClaveValida(clave)) 
+            IdentityUser? vendedor = null;
+            if (!string.IsNullOrEmpty(vendedorId))
             {
-                ModelState.AddModelError("", "La clave es incorrecta.");
+                vendedor = await _userManager.FindByIdAsync(vendedorId);
+            }
+
+            if (vendedor == null)
+            {
+                ModelState.AddModelError("", "Elegí a qué vendedor asignar los clientes.");
+                await CargarVendedoresEnViewBag();
                 return View();
             }
-            if (archivo==null || archivo.Length==0)
+
+            if (archivo == null || archivo.Length == 0)
             {
-                ModelState.AddModelError("", "Elegi un archivo .xlsx");
+                ModelState.AddModelError("", "Elegí un archivo .xlsx");
+                await CargarVendedoresEnViewBag();
                 return View();
             }
 
@@ -53,7 +88,7 @@ namespace ListaPrecios_MVC.Controllers
 
             try
             {
-                using(Stream stream = archivo.OpenReadStream())
+                using (Stream stream = archivo.OpenReadStream())
                 using (XLWorkbook libro = new XLWorkbook(stream))
                 {
                     IXLWorksheet hoja = libro.Worksheet(1);
@@ -64,7 +99,7 @@ namespace ListaPrecios_MVC.Controllers
                         string direccion = fila.Cell(2).GetString().Trim();
 
                         //fila sin nombre o nombre repetido dentro del mismo archivo
-                        if(nombre =="" || !vistos.Add(nombre))
+                        if (nombre == "" || !vistos.Add(nombre))
                         {
                             omitidos++;
                             continue;
@@ -76,16 +111,34 @@ namespace ListaPrecios_MVC.Controllers
                             Cliente nuevo = new Cliente();
                             nuevo.Nombre = nombre;
                             nuevo.Direccion = direccion;
+                            nuevo.VendedorId = vendedor.Id;
                             _context.Clientes.Add(nuevo);
                             creados++;
                         }
-                        else if (cliente.Direccion != direccion) 
+                        else
                         {
-                            cliente.Direccion = direccion;
-                            actualizados++;
+                            bool huboCambios = false;
 
+                            if (cliente.Direccion != direccion)
+                            {
+                                cliente.Direccion = direccion;
+                                huboCambios = true;
+                            }
+                            if (cliente.VendedorId != vendedor.Id)
+                            {
+                                cliente.VendedorId = vendedor.Id;   // el cliente pasa a este vendedor
+                                huboCambios = true;
+                            }
+
+                            if (huboCambios)
+                            {
+                                actualizados++;
+                            }
+                            else
+                            {
+                                sinCambios++;
+                            }
                         }
-                        else { sinCambios++;}
 
 
                     }
@@ -95,25 +148,20 @@ namespace ListaPrecios_MVC.Controllers
             catch (Exception Ex)
             {
                 ModelState.AddModelError("", "Error al leer archivo." + Ex.Message);
+                await CargarVendedoresEnViewBag();
                 return View();
             }
             TempData["Resultado"] = "Creados: " + creados + "* Actualizados: " + actualizados + "* Sin Cambios: " + sinCambios + "* Omitidos: " + omitidos;
             return RedirectToAction("Index");
         }
 
-        private bool ClaveValida(string? clave)
+        private async Task CargarVendedoresEnViewBag()
         {
-            IConfiguration configuracion = HttpContext.RequestServices
-                .GetRequiredService<IConfiguration>();
+            ViewBag.Vendedores = await _userManager.Users
+                .OrderBy(u => u.UserName)
+                .ToListAsync();
 
-            string? ClaveCorrecta = configuracion["ClaveImportar"];
-                if(string.IsNullOrEmpty(ClaveCorrecta))  { return false; }
-            return clave == ClaveCorrecta;
         }
 
-
-
-
     }
-
 }

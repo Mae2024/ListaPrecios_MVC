@@ -6,7 +6,8 @@ using ListaPrecios_MVC.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Data;
-using DocumentFormat.OpenXml.Office2021.MipLabelMetaData;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace ListaPrecios_MVC.Controllers
 {
@@ -47,20 +48,17 @@ namespace ListaPrecios_MVC.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles ="Admin")]
         public IActionResult Importar() => View();
 
         
         
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Importar(IFormFile archivo, string proveedor, string clave)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Importar(IFormFile archivo, string proveedor)
         {
-            var claveCorrecta = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["ClaveImportar"];
-            if (!ClaveValida(clave))
-            {
-                ModelState.AddModelError("", "clave incorrecta.");
-                return View();
-
-            }
+            
+       
 
             if (archivo == null || archivo.Length == 0)
             {
@@ -120,6 +118,7 @@ namespace ListaPrecios_MVC.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Crear()
         {
             ViewBag.Proveedores = await _context.Articulos
@@ -128,17 +127,20 @@ namespace ListaPrecios_MVC.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(string descripcion, string proveedor, decimal precioSinIva, decimal precioFinal, string clave)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Crear(string descripcion, string proveedor, decimal precioSinIva, decimal precioFinal)
         {
             descripcion = (descripcion ?? "").Trim();
             proveedor = (proveedor ?? "").Trim();
 
-            if (!ClaveValida(clave))
-                ModelState.AddModelError("", "Clave incorrecta.");
-            else if (descripcion == "" || proveedor == "" || precioFinal <= 0)
+            if (descripcion == "" || proveedor == "" || precioFinal <= 0)
+            {
                 ModelState.AddModelError("", "Descripción, proveedor y precio final son obligatorios.");
+            }
             else if (await _context.Articulos.AnyAsync(a => a.Descripcion == descripcion && a.Proveedor == proveedor))
+            {
                 ModelState.AddModelError("", "Ya existe ese articulo para ese proveedor, usa modif. para cambiar el precio.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -165,13 +167,10 @@ namespace ListaPrecios_MVC.Controllers
             TempData["Resultado"] = $"Se agrego {art.Descripcion}";
             return RedirectToAction(nameof(Index), new { buscar = art.Descripcion });
 
-
         }
-
-
-
         
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Editar(int id) 
         {
             var art = await _context.Articulos.FindAsync(id);
@@ -181,18 +180,13 @@ namespace ListaPrecios_MVC.Controllers
 
         
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Editar(int id, string descripcion, decimal precioSinIva, decimal PrecioFinal, string clave)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Editar(int id, string descripcion, decimal precioSinIva, decimal PrecioFinal)
         {
             var art = await _context.Articulos.FindAsync(id);
             if (art == null) return NotFound();  //resume: {return ...}
 
-            var claveCorrecta = HttpContext.RequestServices
-                .GetRequiredService<IConfiguration>()["ClaveImportar"];
-            if(!ClaveValida(clave))
-            {
-                ModelState.AddModelError("", "Clave  incorrecta");
-                return View(art);
-            }
+             
             if (string.IsNullOrWhiteSpace(descripcion) || PrecioFinal <= 0)
             {
                 ModelState.AddModelError("", "La descripcion y el precio final son obligatorios");
@@ -220,14 +214,6 @@ namespace ListaPrecios_MVC.Controllers
 
         }
 
-
-
-        //Validar clave para importar, editar y crear
-        private bool ClaveValida(string? clave)
-        {
-            var claveCorrecta = HttpContext.RequestServices
-                .GetRequiredService<IConfiguration>()["claveImportar"];
-            return !string.IsNullOrEmpty(claveCorrecta) && clave == claveCorrecta;
-        }
+   
     }
 }

@@ -1,24 +1,31 @@
 ﻿@{
-    ViewData["Title"] = "Importar Clientes";
+    ViewData["Title"] = "Importar clientes";
+    List<Microsoft.AspNetCore.Identity.IdentityUser> vendedores = ViewBag.Vendedores;
 }
 
-<h2>Importar Clientes</h2>
-<p>Excel con columnas: NOMBRE | DIRECCION (primera fila = titulos)</p>
+<h2>Importar clientes</h2>
+<p>Excel con columnas: NOMBRE | DIRECCION (primera fila = títulos)</p>
 
 <form asp-action="Importar" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="All" class="text-danger"></div>
 
+    @* 1) A qué vendedor van los clientes de este Excel *@
+    <div class="mb-3">
+        <label class="form-label">Asignar a vendedor</label>
+        <select name="vendedorId" class="form-select" required>
+            <option value="">Elegí un vendedor...</option>
+            @foreach (var v in vendedores)
+            {
+                <option value="@v.Id">@v.UserName</option>
+            }
+        </select>
+    </div>
+
+    @* 2) El archivo *@
     <div class="mb-3">
         <input type="file" name="archivo" accept=".xlsx" class="form-control" required />
     </div>
-    <div class="mb-3">
-        <label class="form-check form-label">Clave</label>
-        <input name="clave" type="password" class="form-control" required />
-    </div>
 
-    <button class="btn btn-primary">importar</button>
+    <button class="btn btn-primary">Importar</button>
     <a asp-action="Index" class="btn btn-secondary">Volver</a>
-
 </form>
-
-

@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Resetear contraseña";
+}
+
+<div class="mx-auto" style="max-width: 400px">
+    <h2>Resetear contraseña</h2>
+    <p>Usuario: <strong>@ViewBag.UserName</strong></p>
+
+    <form asp-action="ResetearClave" asp-route-id="@ViewBag.Id" method="post" class="buscador">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Contraseña nueva (provisoria)</label>
+            <input name="claveNueva" class="form-control" autocomplete="off" required minlength="6" />
+            <div class="form-text">Pasásela al usuario y pedile que la cambie desde "Cambiar mi contraseña".</div>
+        </div>
+
+        <button class="btn btn-primary w-100">Cambiar contraseña</button>
+        <a asp-action="Index" class="btn btn-secondary w-100 mt-2">Cancelar</a>
+    </form>
+</div>

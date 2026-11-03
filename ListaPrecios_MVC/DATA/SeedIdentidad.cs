@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ListaPrecios_MVC.DATA
 {
@@ -55,7 +57,20 @@ namespace ListaPrecios_MVC.DATA
                 await userManager.AddToRoleAsync(admin, "Admin");
             }
 
+
+            //Clientes y pedidos sin vendedor quedan asignados al admin
+            PreciosContext db = servicios.GetRequiredService<PreciosContext>();
+            string adminId = admin.Id;
+            await db.Clientes
+                .Where(c => c.VendedorId == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.VendedorId, adminId));
+            await db.Pedidos
+                .Where(p => p.VendedorId == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.VendedorId, adminId));
+
+
         }
+     
 
     }
 }

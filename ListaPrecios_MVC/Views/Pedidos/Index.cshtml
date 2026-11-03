@@ -8,13 +8,23 @@
 
 @if (TempData["Resultado"] != null)
 {
-    <div class="alert alert-success py-2">@TempData["Resultado"]</div>  //muestra que se elimino el pedido #...
+    <div class="alert alert-success py-2">@TempData["Resultado"]</div>
+    //muestra que se elimino el pedido #...
 }
 
 
 <form asp-action="Index" method="get" class="d-flex gap-2 buscador">
     <input type="date" name="fecha" value="@fecha.ToString("yyyy-MM-dd")" class="form-control" />
-    <button class="btn btn-primary">Ver</button>
+    @if (User.IsInRole("Admin"))
+    {
+        <select name="vendedor" class="form-select">
+            <option value="">Todos</option>
+            @foreach (var v in (List<Microsoft.AspNetCore.Identity.IdentityUser>)ViewBag.vendedores)
+            {
+                <option value="@v.Id" selected="@(v.Id == ViewBag.Vendedor)">@v.UserName</option>
+            }
+        </select>
+    }
 </form>
 
 @if (Model.Count == 0)
@@ -26,6 +36,7 @@ else
     <div class="d-flex justify-content-between align-items-center mb-2">
         <span>@Model.Count pedidos</span>
         <a asp-action="ImprimirDia" asp-route-fecha="@fecha.ToString("yyyy-MM-dd")"
+        asp-route-vendedor="@ViewBag.Vendedor"
            target="_blank" class="btn btn-outline-secondary">🖨️ Imprimir todos</a>
     </div>
 
@@ -38,7 +49,11 @@ else
                 <div class="desc mb-1">@p.Cliente?.Nombre</div>
                 <div class="detalle">
                     #@p.Id · @p.Fecha.ToString("HH:mm") · @p.Items.Count artículos
-                </div>
+                    @if(User.IsInRole("Admin"))
+                        {
+                        <span>· 👤@p.Vendedor?.UserName</span>
+                        }
+                    </div>
             </a>
             <div class="text-end">
                 <div class="fw-bold">$ @totalPedido.ToString("N2")</div>

@@ -1,0 +1,32 @@
+﻿@model ListaPrecios_MVC.Models.CambiarClaveViewModel
+@{
+    ViewData["Title"] = "Cambiar mi contraseña";
+}
+
+<div class="mx-auto" style="max-width: 400px">
+    <h2>Cambiar mi contraseña</h2>
+
+    <form asp-action="CambiarClave" method="post" class="buscador">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="ClaveActual" class="form-label"></label>
+            <input asp-for="ClaveActual" class="form-control" autocomplete="current-password" />
+            <span asp-validation-for="ClaveActual" class="text-danger small"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ClaveNueva" class="form-label"></label>
+            <input asp-for="ClaveNueva" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="ClaveNueva" class="text-danger small"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ClaveNuevaRepetida" class="form-label"></label>
+            <input asp-for="ClaveNuevaRepetida" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="ClaveNuevaRepetida" class="text-danger small"></span>
+        </div>
+
+        <button class="btn btn-primary w-100">Cambiar contraseña</button>
+    </form>
+</div>

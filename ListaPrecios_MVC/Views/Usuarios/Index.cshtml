@@ -1,0 +1,49 @@
+﻿@model List<ListaPrecios_MVC.Models.UsuarioFila>
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<h2>Usuarios</h2>
+
+@if (TempData["Resultado"] != null)
+{
+    <div class="alert alert-success">@TempData["Resultado"]</div>
+}
+
+<p>
+    <a asp-action="Crear" class="btn btn-primary">➕ Nuevo usuario</a>
+</p>
+
+<table class="table table-sm tabla-precios">
+    <thead>
+        <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.UserName</td>
+                <td>@u.Rol</td>
+                <td>
+                    @if (u.Bloqueado)
+                    {
+                        <span class="badge bg-danger">Bloqueado</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                </td>
+                <td>
+                    <a asp-action="ResetearClave" asp-route-id="@u.Id"
+                       class="btn btn-sm btn-outline-secondary">🔑 Resetear clave</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

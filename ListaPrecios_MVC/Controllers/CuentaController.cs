@@ -3,16 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using ListaPrecios_MVC.Models;
 using Microsoft.Identity.Client;
-
+using Microsoft.AspNetCore.Authorization;
 
 namespace ListaPrecios_MVC.Controllers
 {
     public class CuentaController : Controller
     {
         private readonly SignInManager<IdentityUser> _signInManager;
-        public CuentaController(SignInManager<IdentityUser> signInManager)
+        private readonly UserManager<IdentityUser> _userManager;
+        public CuentaController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager    )
         {
             _signInManager = signInManager;
+            _userManager = userManager;
         }
 
         //GET: /Cuenta/Login
@@ -75,7 +77,44 @@ namespace ListaPrecios_MVC.Controllers
             return View();
         }
 
+        // GET: /Cuenta/CambiarClave
+        [HttpGet]
+        [Authorize]
+        public IActionResult CambiarClave()
+        {
+            return View();
+        }
 
+        // POST: /Cuenta/CambiarClave
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> CambiarClave(CambiarClaveViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            IdentityUser? usuario = await _userManager.GetUserAsync(User);
+            if (usuario == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            IdentityResult resultado = await _userManager.ChangePasswordAsync(usuario, modelo.ClaveActual, modelo.ClaveNueva);
+
+            if (!resultado.Succeeded)
+            {
+                ModelState.AddModelError("", "No se pudo cambiar. Revisá que la contraseña actual sea correcta.");
+                return View(modelo);
+            }
+
+            // Renueva la sesión, para que no te saque al cambiar la contraseña
+            await _signInManager.RefreshSignInAsync(usuario);
+
+            TempData["Resultado"] = "Tu contraseña se cambió correctamente.";
+            return RedirectToAction("Index", "Articulos");
+        }
 
 
     }

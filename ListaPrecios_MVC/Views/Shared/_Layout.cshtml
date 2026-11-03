@@ -1,12 +1,12 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ListaPrecios_MVC</title>
     <script type="importmap"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapi.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ListaPrecios_MVC.styles.css" asp-append-version="true" />
@@ -15,7 +15,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark menu-principal mb-4">
             <div class="container-fluid">
-                <a class="navbar-brand data-bs-theme=" dark" marca" asp-controller="Articulos" asp-action="Index">
+                <a class="navbar-brand marca" data-bs-theme="dark"  asp-controller="Articulos" asp-action="Index">
                     🧀 <span>Lista</span>Precios Distribuidora Reales
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -34,7 +34,7 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Articulos" asp-action="Index">🔎 Buscar precios</a>
                         </li>
-                        <li class="nav-link">
+                        <li class="nav-item">
                             <a class="nav-link" asp-controller="Clientes" asp-action="Index">👥 Clientes</a>
                         </li>
                         <li class="nav-item">
@@ -44,10 +44,15 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Articulos" asp-action="Importar">📥 Importar lista</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Usuarios" asp-action="Index"> 🔐 Usuarios</a>
+                        </li>
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item d-flex align-items-center">
-                        <span class="nav-link">👤 @User.Identity.Name</span>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Cuenta" asp-action="CambiarClave" title="Cambiar mi contraseña">
+                                    👤 @User.Identity.Name
+                                </a>
                             </li>
                         <li class="nav-item">
                             <form asp-controller="Cuenta" asp-action="Logout" method="post" class="d-inline">

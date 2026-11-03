@@ -1,6 +1,7 @@
 ﻿@model List<ListaPrecios_MVC.Models.Cliente>
 @{
     ViewData["Title"] = "Clientes";
+    bool esAdmin = User.IsInRole("Admin");
 }
 
 <h2>Clientes</h2>
@@ -10,9 +11,26 @@
     <div class="alert alert-success">@TempData["Resultado"]</div>
 }
 
-<p>
-    <a asp-action="Importar" class="btn btn-primary">📥 Importar clientes</a>
-</p>
+@* ===== Solo Admin: importar y filtrar por vendedor ===== *@
+@if (esAdmin)
+{
+    List<Microsoft.AspNetCore.Identity.IdentityUser> vendedores = ViewBag.Vendedores;
+
+    <p>
+        <a asp-action="Importar" class="btn btn-primary">📥 Importar clientes</a>
+    </p>
+
+    <form method="get" class="d-flex gap-2 buscador">
+        <select name="vendedor" class="form-select">
+            <option value="">Todos los vendedores</option>
+            @foreach (var v in vendedores)
+            {
+                <option value="@v.Id" selected="@(v.Id == ViewBag.Vendedor)">@v.UserName</option>
+            }
+        </select>
+        <button class="btn btn-primary">Ver</button>
+    </form>
+}
 
 <p>@Model.Count clientes</p>
 
@@ -21,6 +39,10 @@
         <tr>
             <th>Nombre</th>
             <th>Dirección</th>
+            @if (esAdmin)
+            {
+                <th>Vendedor</th>
+            }
         </tr>
     </thead>
     <tbody>
@@ -29,6 +51,10 @@
             <tr>
                 <td>@c.Nombre</td>
                 <td>@c.Direccion</td>
+                @if (esAdmin)
+                {
+                    <td>@c.Vendedor?.UserName</td>
+                }
             </tr>
         }
     </tbody>

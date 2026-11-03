@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace ListaPrecios_MVC.Models
 
@@ -12,6 +13,8 @@ namespace ListaPrecios_MVC.Models
         public string  Nombre { get; set; }
         [StringLength(200)]
         public string? Direccion { get; set; }
+        public string? VendedorId { get; set; }
+        public IdentityUser? Vendedor { get; set; }
         public List<Pedido> Pedidos { get; set; } = new List<Pedido>();      //new list crea la lista vacia desde el principio, para luego hacer Add sin problemas
 
     }

@@ -1,0 +1,36 @@
+﻿@model ListaPrecios_MVC.Models.CrearUsuarioViewModel
+@{
+    ViewData["Title"] = "Nuevo usuario";
+}
+
+<div class="mx-auto" style="max-width: 400px">
+    <h2>Nuevo usuario</h2>
+
+    <form asp-action="Crear" method="post" class="buscador">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Usuario" class="form-label"></label>
+            <input asp-for="Usuario" class="form-control" autocapitalize="none" autocomplete="off" />
+            <span asp-validation-for="Usuario" class="text-danger small"></span>
+            <div class="form-text">Sin espacios ni tildes. Ej: juan, juan.perez</div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Clave" class="form-label"></label>
+            <input asp-for="Clave" class="form-control" autocomplete="off" />
+            <span asp-validation-for="Clave" class="text-danger small"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Rol" class="form-label"></label>
+            <select asp-for="Rol" class="form-select">
+                <option value="Vendedor">Vendedor</option>
+                <option value="Admin">Admin</option>
+            </select>
+        </div>
+
+        <button class="btn btn-primary w-100">Crear usuario</button>
+        <a asp-action="Index" class="btn btn-secondary w-100 mt-2">Cancelar</a>
+    </form>
+</div>

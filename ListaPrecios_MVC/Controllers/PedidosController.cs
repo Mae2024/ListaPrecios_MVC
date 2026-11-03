@@ -1,19 +1,25 @@
 ﻿
 using ListaPrecios_MVC.DATA;
+using ListaPrecios_MVC.Migrations;
 using ListaPrecios_MVC.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace ListaPrecios_MVC.Controllers
 {
+    [Authorize]
     public class PedidosController : Controller
     {
         private readonly PreciosContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public PedidosController(PreciosContext context)
+        public PedidosController(PreciosContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: /Pedidos/Nuevo
@@ -28,22 +34,28 @@ namespace ListaPrecios_MVC.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Nuevo(string? cliente, string? nuevoNombre, string? nuevaDireccion)
         {
+            string usuarioId = UsuarioActualId();
             Cliente? clienteElegido = null;
 
             if (!string.IsNullOrWhiteSpace(nuevoNombre))
             {
-                // Opción 1: crear un cliente nuevo
+                // Opción 1: crear un cliente nuevo, que queda a nombre del usuario actual
                 string nombre = nuevoNombre.Trim();
+                Cliente? existente = await _context.Clientes.FirstOrDefaultAsync(c => c.Nombre == nombre);
 
-                bool yaExiste = await _context.Clientes.AnyAsync(c => c.Nombre == nombre);
-                if (yaExiste)
+                if (existente != null && existente.VendedorId == usuarioId)
                 {
                     ModelState.AddModelError("", "Ese cliente ya existe. Elegilo de la lista de arriba.");
+                }
+                else if (existente != null)
+                {
+                    ModelState.AddModelError("", "Ese cliente ya está asignado a otro vendedor.");
                 }
                 else
                 {
                     clienteElegido = new Cliente();
                     clienteElegido.Nombre = nombre;
+                    clienteElegido.VendedorId = usuarioId;
                     if (nuevaDireccion != null)
                     {
                         clienteElegido.Direccion = nuevaDireccion.Trim();
@@ -53,13 +65,14 @@ namespace ListaPrecios_MVC.Controllers
             }
             else if (!string.IsNullOrWhiteSpace(cliente))
             {
-                // Opción 2: un cliente que ya existe
+                // Opción 2: un cliente propio que ya existe
                 string nombre = cliente.Trim();
-                clienteElegido = await _context.Clientes.FirstOrDefaultAsync(c => c.Nombre == nombre);
+                clienteElegido = await _context.Clientes
+                    .FirstOrDefaultAsync(c => c.Nombre == nombre && c.VendedorId == usuarioId);
 
                 if (clienteElegido == null)
                 {
-                    ModelState.AddModelError("", "No encontré ese cliente. Elegilo de las sugerencias o crealo abajo.");
+                    ModelState.AddModelError("", "No encontré ese cliente entre los tuyos. Elegilo de las sugerencias o crealo abajo.");
                 }
             }
             else
@@ -75,10 +88,11 @@ namespace ListaPrecios_MVC.Controllers
 
             Pedido pedido = new Pedido();
             pedido.Cliente = clienteElegido;
+            pedido.VendedorId = usuarioId;
             pedido.Fecha = DateTime.Now;
             _context.Pedidos.Add(pedido);
 
-            await _context.SaveChangesAsync();   // guarda el cliente nuevo (si hay) y el pedido
+            await _context.SaveChangesAsync();
 
             return RedirectToAction("Editar", new { id = pedido.Id });
         }
@@ -86,7 +100,7 @@ namespace ListaPrecios_MVC.Controllers
 
 
 
-                // GET: /Pedidos/Editar/5?buscar=jamon
+        // GET: /Pedidos/Editar/5?buscar=jamon
         [HttpGet]
         public async Task<IActionResult> Editar(int id, string? buscar)
         {
@@ -98,6 +112,10 @@ namespace ListaPrecios_MVC.Controllers
             if (pedido == null)
             {
                 return NotFound();
+            }
+            if (!PuedeVer(pedido))
+            {
+                return Forbid();
             }
 
             List<Articulo> resultados = new List<Articulo>();
@@ -124,9 +142,9 @@ namespace ListaPrecios_MVC.Controllers
 
             return View(pedido);
         }
-       
-        
-                // POST: /Pedidos/AgregarItem
+
+
+        // POST: /Pedidos/AgregarItem
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> AgregarItem(int pedidoId, int articuloId, string? cantidad)
         {
@@ -146,6 +164,10 @@ namespace ListaPrecios_MVC.Controllers
             {
                 return NotFound();
             }
+            if (!PuedeVer(pedido))
+            {
+                return Forbid();
+            }
 
             PedidoItem item = new PedidoItem();
             item.PedidoId = pedido.Id;
@@ -162,9 +184,9 @@ namespace ListaPrecios_MVC.Controllers
             return RedirectToAction("Editar", new { id = pedidoId });
         }
 
-                
-        
-                // POST: /Pedidos/QuitarItem
+
+
+        // POST: /Pedidos/QuitarItem
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> QuitarItem(int id)
         {
@@ -173,6 +195,11 @@ namespace ListaPrecios_MVC.Controllers
             if (item == null)
             {
                 return NotFound();
+            }
+            Pedido? pedidoDelItem = await _context.Pedidos.FindAsync(item.PedidoId);
+            if (pedidoDelItem == null || !PuedeVer(pedidoDelItem))
+            {
+                return Forbid();
             }
 
             int pedidoId = item.PedidoId;
@@ -186,9 +213,9 @@ namespace ListaPrecios_MVC.Controllers
 
 
 
-                // GET: /Pedidos?fecha=2026-10-30
+        // GET: /Pedidos?fecha=2026-11-02&vendedor=...
         [HttpGet]
-        public async Task<IActionResult> Index(DateTime? fecha)
+        public async Task<IActionResult> Index(DateTime? fecha, string? vendedor)
         {
             DateTime dia;
             if (fecha.HasValue)
@@ -200,9 +227,21 @@ namespace ListaPrecios_MVC.Controllers
                 dia = DateTime.Today;
             }
 
-            List<Pedido> pedidos = await PedidosDelDia(dia);
+            string? filtroVendedor;
+            if (User.IsInRole("Admin"))
+            {
+                filtroVendedor = vendedor;          // vacío = todos los vendedores
+                await CargarVendedoresEnViewBag();
+            }
+            else
+            {
+                filtroVendedor = UsuarioActualId(); // un vendedor solo ve los suyos
+            }
+
+            List<Pedido> pedidos = await PedidosDelDia(dia, filtroVendedor);
 
             ViewBag.Fecha = dia;
+            ViewBag.Vendedor = vendedor;
             return View(pedidos);
         }
 
@@ -219,6 +258,10 @@ namespace ListaPrecios_MVC.Controllers
             {
                 return NotFound();
             }
+            if (!PuedeVer(pedido))
+            {
+                return Forbid();
+            }
 
             List<Pedido> lista = new List<Pedido>();
             lista.Add(pedido);
@@ -226,15 +269,23 @@ namespace ListaPrecios_MVC.Controllers
             return View("Imprimir", lista);
         }
 
-           // GET: /Pedidos/ImprimirDia?fecha=2026-10-30   → todos los del día
+        // GET: /Pedidos/ImprimirDia? fecha = 2026 - 11 - 02 & vendedor = ...
         [HttpGet]
-        public async Task<IActionResult> ImprimirDia(DateTime fecha)
+        public async Task<IActionResult> ImprimirDia(DateTime fecha, string? vendedor)
         {
-            List<Pedido> pedidos = await PedidosDelDia(fecha.Date);
+            string? filtroVendedor;
+            if (User.IsInRole("Admin"))
+            {
+                filtroVendedor = vendedor;
+            }
+            else
+            {
+                filtroVendedor = UsuarioActualId();
+            }
+
+            List<Pedido> pedidos = await PedidosDelDia(fecha.Date, filtroVendedor);
             return View("Imprimir", pedidos);
         }
-
-
 
         // Convierte "5,54" o "5.54" en 5.54
         private static bool LeerDecimal(string? texto, out decimal valor)
@@ -250,31 +301,67 @@ namespace ListaPrecios_MVC.Controllers
             return decimal.TryParse(limpio, NumberStyles.Number, CultureInfo.InvariantCulture, out valor);
         }
 
+        //solo clientes del usuario actual
         private async Task CargarClientesEnViewBag()
         {
+            string usuarioId = UsuarioActualId();
+
             ViewBag.Clientes = await _context.Clientes
+                .Where(c => c.VendedorId == usuarioId)
                 .OrderBy(c => c.Nombre)
                 .Select(c => c.Nombre)
                 .ToListAsync();
         }
-        private async Task<List<Pedido>> PedidosDelDia(DateTime dia)
+
+        //El id del usuario que inicio sesion
+        private string UsuarioActualId()
+        {
+            string? id = _userManager.GetUserId(User);
+            if (id == null)
+            {
+                return "";
+            }
+            return id;
+        }
+        //este usuario puede ver o modificar este pedido ?
+        private bool PuedeVer(Pedido pedido)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+            return pedido.VendedorId == UsuarioActualId();
+        }
+        private async Task CargarVendedoresEnViewBag()
+        {
+            ViewBag.Vendedores = await _userManager.Users
+                .OrderBy(u => u.UserName)
+                .ToListAsync();
+        }
+
+
+
+        private async Task<List<Pedido>> PedidosDelDia(DateTime dia, string? vendedorId)
         {
             DateTime diaSiguiente = dia.AddDays(1);
 
-            List<Pedido> pedidos = await _context.Pedidos
-                .Include(p => p.Cliente)
-                .Include(p => p.Items)
-                .Where(p => p.Fecha >= dia && p.Fecha < diaSiguiente)
-                .OrderBy(p => p.Fecha)
-                .ToListAsync();
-
+            IQueryable<Pedido> query = _context.Pedidos
+                       .Include(p => p.Cliente)
+                      .Include(p => p.Items)
+                      .Include(p => p.Vendedor)
+                      .Where(p => p.Fecha >= dia && p.Fecha < diaSiguiente);
+            if (!string.IsNullOrEmpty(vendedorId))
+            {
+                query = query.Where(p => p.VendedorId == vendedorId);
+            }
+            List<Pedido> pedidos = await query.OrderBy(pedidos => pedidos.Fecha).ToListAsync();
             return pedidos;
         }
-            
-        
-        
-        
-                // GET: /Pedidos/Eliminar/5   → muestra la confirmación
+
+
+
+
+        // GET: /Pedidos/Eliminar/5   → muestra la confirmación
         [HttpGet]
         public async Task<IActionResult> Eliminar(int id)
         {
@@ -287,13 +374,17 @@ namespace ListaPrecios_MVC.Controllers
             {
                 return NotFound();
             }
+            if (!PuedeVer(pedido))
+            {
+                return Forbid();
+            }
 
             return View(pedido);
         }
 
 
 
-                // POST: /Pedidos/Eliminar/5   → borra de verdad
+        // POST: /Pedidos/Eliminar/5   → borra de verdad
         [HttpPost, ValidateAntiForgeryToken]
         [ActionName("Eliminar")]
         public async Task<IActionResult> EliminarConfirmado(int id)
@@ -305,6 +396,10 @@ namespace ListaPrecios_MVC.Controllers
             if (pedido == null)
             {
                 return NotFound();
+            }
+            if (!PuedeVer(pedido))
+            {
+                return Forbid();
             }
 
             DateTime fechaDelPedido = pedido.Fecha.Date;
