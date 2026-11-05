@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 using ListaPrecios_MVC.DATA;
+using ListaPrecios_MVC.Migrations;
 using ListaPrecios_MVC.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ListaPrecios_MVC.Controllers
 {
@@ -162,6 +164,80 @@ namespace ListaPrecios_MVC.Controllers
                 .ToListAsync();
 
         }
+
+        public async Task<IActionResult> Editar(int id)
+        {
+            Cliente? cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null) return NotFound();
+
+            bool esAdmin = User.IsInRole("Admin");
+            string? usuarioId = _userManager.GetUserId(User);
+
+            if (!esAdmin && cliente.VendedorId != usuarioId) return Forbid();
+
+            if (esAdmin)
+                await CargarVendedoresEnViewBag();
+            return View(cliente);
+
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Editar(int id, string? nombre, string? direccion, string? vendedorId) 
+        {
+            Cliente? cliente = await _context.Clientes.FindAsync(id);
+            if(cliente == null) return NotFound();
+
+            bool esAdmin = User.IsInRole("Admin");
+            string? usuarioId = _userManager.GetUserId(User);
+
+            if (!esAdmin && cliente.VendedorId != usuarioId) return Forbid();
+
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                ModelState.AddModelError("", "Debes escribir un nombre.");
+            }
+            else 
+            {
+                string nombreLimpio = nombre.Trim();
+                bool existe = await _context.Clientes
+                    .AnyAsync(c => c.Nombre == nombreLimpio && c.Id != id);
+                if (existe)
+                {
+                    ModelState.AddModelError("", "Ya existe un cliente con ese nombre.");
+                }
+            } 
+            if (!ModelState.IsValid)
+            {
+                await CargarVendedoresEnViewBag();
+                return View(cliente);
+            }
+      
+
+            cliente.Nombre = nombre!.Trim();
+            
+            if (direccion != null)
+            {
+                cliente.Direccion = direccion.Trim();
+            }
+            else
+            {
+                cliente.Direccion = null;
+            }
+
+            if(esAdmin && !string.IsNullOrWhiteSpace(vendedorId))
+            {
+                IdentityUser? nuevoVendedor = await _userManager.FindByIdAsync(vendedorId);
+                if(nuevoVendedor != null)
+                {
+                    cliente.VendedorId = nuevoVendedor.Id;
+                }
+            }
+            await _context.SaveChangesAsync();
+            TempData["Resultado"] = "Se actualizo cliente " + cliente.Nombre + ".";
+            return RedirectToAction("Index");
+          }
+
+    
 
     }
 }

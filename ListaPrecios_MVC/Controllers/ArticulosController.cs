@@ -90,7 +90,7 @@ namespace ListaPrecios_MVC.Controllers
                             Proveedor = proveedor,
                             PrecioSinIva = SinIva,
                             PrecioFinal = final,
-                            FechaActualizacion = DateTime.Now
+                            FechaActualizacion = HoraArgentina.Ahora()
 
                         });
                         creados++;
@@ -157,7 +157,7 @@ namespace ListaPrecios_MVC.Controllers
                 Proveedor = proveedor,
                 PrecioSinIva = Math.Round(precioSinIva, 2),
                 PrecioFinal = Math.Round(precioFinal, 2),
-                FechaActualizacion = DateTime.Now
+                FechaActualizacion = HoraArgentina.Ahora()
 
             };
 
@@ -195,7 +195,7 @@ namespace ListaPrecios_MVC.Controllers
             art.Descripcion = descripcion.Trim();
             art.PrecioSinIva = Math.Round(precioSinIva, 2);
             art.PrecioFinal = Math.Round(PrecioFinal, 2);
-            art.FechaActualizacion = DateTime.Now;
+            art.FechaActualizacion = HoraArgentina.Ahora();
             await _context.SaveChangesAsync();
 
             TempData["Resultado"] = $"Se actualizó: {art.Descripcion}";  //usar $"...{}" es lo mismo que usar: "se actualizo: " + art.Descripcion

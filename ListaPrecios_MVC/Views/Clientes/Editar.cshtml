@@ -1,0 +1,40 @@
+﻿@model ListaPrecios_MVC.Models.Cliente
+@{
+    ViewData["Title"] = "Editar Cliente";
+    bool esAdmin = User.IsInRole("Admin");
+}
+
+<div class="mx-auto" style="max-width: 400px">
+    <h2>Editar Cliente</h2>
+    <form asp-action="Editar" asp-route-id="@Model.Id" method="post" class="buscador">
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input name="nombre" value="@Model.Nombre" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Direccion</label>
+            <input name="direccion" value="@Model.Direccion" class="form-control" />
+        </div>
+
+        @if (esAdmin)
+        {
+            List<Microsoft.AspNetCore.Identity.IdentityUser> vendedores = ViewBag.Vendedores;
+            <div class="mb-3">
+                <label class="form-label">Vendedor</label>
+                <select name="vendedorId" class="form-select">
+                    @foreach (var v in vendedores)
+                    {
+                        <option value="@v.Id" selected="@(v.Id == Model.VendedorId)">@v.UserName</option>
+                    }
+                </select>
+            </div>
+        }
+
+        <button class="btn btn-primary w-100">Guardar</button>
+        <a asp-action="Index" class="btn btn-secondary w-100 mt-2">Cancelar</a>
+
+    </form>
+</div>

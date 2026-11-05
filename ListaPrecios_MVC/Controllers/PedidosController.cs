@@ -89,7 +89,7 @@ namespace ListaPrecios_MVC.Controllers
             Pedido pedido = new Pedido();
             pedido.Cliente = clienteElegido;
             pedido.VendedorId = usuarioId;
-            pedido.Fecha = DateTime.Now;
+            pedido.Fecha = HoraArgentina.Ahora();
             _context.Pedidos.Add(pedido);
 
             await _context.SaveChangesAsync();
