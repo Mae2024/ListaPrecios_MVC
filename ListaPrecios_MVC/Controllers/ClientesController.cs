@@ -237,7 +237,57 @@ namespace ListaPrecios_MVC.Controllers
             return RedirectToAction("Index");
           }
 
-    
+        [HttpGet]
+        public async Task<IActionResult> Eliminar (int id)
+        {
+
+            Cliente? cliente = await _context.Clientes.FindAsync(id);
+
+            if (cliente == null)
+            { return NotFound();
+            }
+
+            bool esAdmin = User.IsInRole("Admin");
+            string? UsuarioId = _userManager.GetUserId(User);
+
+            if (!esAdmin && cliente.VendedorId != UsuarioId) return Forbid();
+
+            ViewBag.CantidadPedidos = await _context.Pedidos.CountAsync(p => p.ClienteId == id);
+            
+
+            return View(cliente);
+
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        [ActionName("Eliminar")]
+        public async Task<IActionResult> EliminarConfirmado(int id)
+        {
+            Cliente? cliente = await _context.Clientes.FindAsync(id);
+            if(cliente == null)
+            {
+                return NotFound();
+            }
+
+
+            bool esAdmin = User.IsInRole("Admin");
+            string? UsuarioId = _userManager.GetUserId(User);
+
+            if (!esAdmin && cliente.VendedorId != UsuarioId) return Forbid();
+
+            bool tienePedidos = await _context.Pedidos.AnyAsync(p => p.ClienteId == id);
+            if (tienePedidos)
+            {
+                TempData["Error"] = "No se puede eliminar, el cliente tiene pedidos";
+                return RedirectToAction("Index");
+            }
+
+            _context.Clientes.Remove(cliente);
+            await _context.SaveChangesAsync();
+
+            TempData["Resultado"] = "Se elimino el cliente " + cliente.Nombre + ".";
+            return RedirectToAction("Index");
+        }
 
     }
 }

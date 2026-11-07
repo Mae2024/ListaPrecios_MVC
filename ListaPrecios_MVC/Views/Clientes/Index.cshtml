@@ -10,6 +10,10 @@
 {
     <div class="alert alert-success">@TempData["Resultado"]</div>
 }
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 @* ===== Solo Admin: importar y filtrar por vendedor ===== *@
 @if (esAdmin)
@@ -57,6 +61,7 @@
                     <td>@c.Vendedor?.UserName</td>
                 }
                 <td> <a asp-action="Editar" asp-route-id="@c.Id" class="btn btn-sm btn-outline-secondary">✏️</a></td>
+                <td> <a asp-action="Eliminar" asp-route-id="@c.Id" class="btn btn-sm btn-outline-danger">🗑️</a></td>
             </tr>
         }
     </tbody>
