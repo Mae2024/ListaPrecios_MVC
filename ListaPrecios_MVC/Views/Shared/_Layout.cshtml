@@ -18,8 +18,12 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark menu-principal mb-4">
             <div class="container-fluid">
-                <a class="navbar-brand marca" data-bs-theme="dark"  asp-controller="Articulos" asp-action="Index">
+                <a class="navbar-brand marca" data-bs-theme="dark" asp-controller="Articulos" asp-action="Index">
                     🧀 <span>Lista</span>Precios Distribuidora Reales
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <div style="font-size: 0.8rem; font-weight: 400;">👤 @User.Identity.Name</div>
+                    }
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#menu" aria-controls="menu"
@@ -41,7 +45,7 @@
                             <a class="nav-link" asp-controller="Clientes" asp-action="Index">👥 Clientes</a>
                         </li>
                         <li class="nav-item">
-                           <a class="nav-link" asp-controller="Articulos" asp-action="Crear">+ nuevo Artículo</a>
+                            <a class="nav-link" asp-controller="Articulos" asp-action="Crear">+ nuevo Artículo</a>
                         </li>
 
                         <li class="nav-item">
@@ -57,18 +61,18 @@
                                     👤 @User.Identity.Name
                                 </a>
                             </li>
-                        <li class="nav-item">
-                            <form asp-controller="Cuenta" asp-action="Logout" method="post" class="d-inline">
-                                <button class="nav-link btn btn-link">🚪 Salir</button>
-                            </form>
-                        </li>
+                            <li class="nav-item">
+                                <form asp-controller="Cuenta" asp-action="Logout" method="post" class="d-inline">
+                                    <button class="nav-link btn btn-link">🚪 Salir</button>
+                                </form>
+                            </li>
                         }
-                    else
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Cuenta" asp-action="Login">🔑 Entrar</a>
-                        </li>
-                    }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Cuenta" asp-action="Login">🔑 Entrar</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

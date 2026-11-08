@@ -1,8 +1,14 @@
 using ListaPrecios_MVC.DATA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// La app usa siempre formato argentino: 1.234,56 y fechas dd/MM/yyyy
+CultureInfo culturaArgentina = new CultureInfo("es-AR");
+CultureInfo.DefaultThreadCurrentCulture = culturaArgentina;
+CultureInfo.DefaultThreadCurrentUICulture = culturaArgentina;
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

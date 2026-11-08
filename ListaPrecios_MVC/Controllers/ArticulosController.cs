@@ -140,12 +140,16 @@ namespace ListaPrecios_MVC.Controllers
 
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Crear(string descripcion, string proveedor, decimal precioSinIva, decimal precioFinal)
+        public async Task<IActionResult> Crear(string descripcion, string proveedor, string? precioSinIva, string? precioFinal)
         {
             descripcion = (descripcion ?? "").Trim();
             proveedor = (proveedor ?? "").Trim();
+            decimal sinIvaNumero;
+            decimal FinalNumero;
+            bool FinalValido = LeerDecimal(precioFinal, out FinalNumero);
+            LeerDecimal(precioSinIva, out sinIvaNumero);
 
-            if (descripcion == "" || proveedor == "" || precioFinal <= 0)
+            if (descripcion == "" || proveedor == "" || !FinalValido || FinalNumero<= 0)
             {
                 ModelState.AddModelError("", "Descripción, proveedor y precio final son obligatorios.");
             }
@@ -167,8 +171,8 @@ namespace ListaPrecios_MVC.Controllers
             {
                 Descripcion = descripcion,
                 Proveedor = proveedor,
-                PrecioSinIva = Math.Round(precioSinIva, 2),
-                PrecioFinal = Math.Round(precioFinal, 2),
+                PrecioSinIva = Math.Round(sinIvaNumero, 2),
+                PrecioFinal = Math.Round(FinalNumero, 2),
                 FechaActualizacion = HoraArgentina.Ahora()
 
             };
@@ -193,20 +197,25 @@ namespace ListaPrecios_MVC.Controllers
         
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Editar(int id, string descripcion, decimal precioSinIva, decimal PrecioFinal)
+        public async Task<IActionResult> Editar(int id, string descripcion, string? precioSinIva, string? PrecioFinal)
         {
+            decimal sinIvaNumero;
+            decimal FinalNumero;
+            bool finalValido = LeerDecimal(PrecioFinal, out FinalNumero);
+            LeerDecimal(precioSinIva, out  sinIvaNumero);
+
             var art = await _context.Articulos.FindAsync(id);
             if (art == null) return NotFound();  //resume: {return ...}
 
              
-            if (string.IsNullOrWhiteSpace(descripcion) || PrecioFinal <= 0)
+            if (string.IsNullOrWhiteSpace(descripcion) || !finalValido || FinalNumero <= 0)
             {
                 ModelState.AddModelError("", "La descripcion y el precio final son obligatorios");
                 return View(art);
             }
             art.Descripcion = descripcion.Trim();
-            art.PrecioSinIva = Math.Round(precioSinIva, 2);
-            art.PrecioFinal = Math.Round(PrecioFinal, 2);
+            art.PrecioSinIva = Math.Round(sinIvaNumero, 2);
+            art.PrecioFinal = Math.Round(FinalNumero, 2);
             art.FechaActualizacion = HoraArgentina.Ahora();
             await _context.SaveChangesAsync();
 
@@ -225,7 +234,18 @@ namespace ListaPrecios_MVC.Controllers
             return decimal.TryParse(texto, NumberStyles.Number, new CultureInfo("es-AR"), out valor);
 
         }
+        private static bool LeerDecimal(string? texto, out decimal valor)
+        {
+            valor = 0;
 
-   
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return false;
+            }
+
+            string limpio = texto.Trim().Replace(",", ".");
+            return decimal.TryParse(limpio, NumberStyles.Number, CultureInfo.InvariantCulture, out valor);
+        }
+
     }
 }
