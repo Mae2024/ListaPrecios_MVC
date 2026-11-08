@@ -55,7 +55,7 @@ namespace ListaPrecios_MVC.Controllers
         
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Importar(IFormFile archivo, string proveedor)
+        public async Task<IActionResult> Importar(IFormFile archivo, string proveedor, bool reemplazar = false)
         {
             
        
@@ -67,10 +67,21 @@ namespace ListaPrecios_MVC.Controllers
             }
 
             proveedor = (proveedor ?? "").Trim();
-            int creados = 0, actualizados = 0, sinCambios = 0, omitidos = 0;
+            int creados = 0, actualizados = 0, sinCambios = 0, omitidos = 0, borrados = 0;
             var vistos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             try
             {
+                // Todo lo que sigue se hace "en bloque": si algo falla, no se borra nada
+                using var transaccion = await _context.Database.BeginTransactionAsync();
+
+                
+                if (reemplazar)
+                {
+                    borrados = await _context.Articulos
+                        .Where(a => a.Proveedor == proveedor)
+                        .ExecuteDeleteAsync();
+                }
+
                 using var stream = archivo.OpenReadStream();
                 using var libro = new XLWorkbook(stream);
                 var hoja = libro.Worksheet(1);
@@ -105,13 +116,14 @@ namespace ListaPrecios_MVC.Controllers
                     else sinCambios++;
                 }
                 await _context.SaveChangesAsync();
+                await transaccion.CommitAsync();
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Error al leer el archivo:" + ex.Message);
                 return View();
             }
-            TempData["Resultado"] = $"Creados: {creados} - Actualizados:{actualizados} - Sin Cambios: {sinCambios} - Omitidos: {omitidos}";
+            TempData["Resultado"] = $"Borrados: {borrados} - Creados: {creados} - Actualizados:{actualizados} - Sin Cambios: {sinCambios} - Omitidos: {omitidos}";
             return RedirectToAction(nameof(Index));
 
         }

@@ -1,0 +1,20 @@
+{
+  "name": "ListaPrecios Distribuidora Reales",
+  "short_name": "ListaPrecios",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf6ec",
+  "theme_color": "#7a1f2b",
+  "icons": [
+    {
+      "src": "/img/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/img/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
