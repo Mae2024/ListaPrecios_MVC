@@ -23,13 +23,27 @@ namespace ListaPrecios_MVC.Controllers
         {
             var query = _context.Articulos.AsQueryable();
 
+            
+            
             if (!string.IsNullOrWhiteSpace(buscar)) // filtro por texto
             {
-                foreach (var palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                    query = query.Where(a => EF.Functions
-                    .Collate(a.Descripcion, "Modern_Spanish_CI_AI")
-                    .Contains(palabra));
+                string texto = buscar.Trim();
+                bool esCodigo = await _context.Articulos.AnyAsync(a => a.Codigo == texto);
+                if (esCodigo)
+                {
+                    query = query.Where(a => a.Codigo == texto);
+                }
+                else
+                {
+                    foreach (var palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        query = query.Where(a => EF.Functions
+                        .Collate(a.Descripcion, "Modern_Spanish_CI_AI")
+                        .Contains(palabra));
+                }
+                              
             }
+
+
             if (!string.IsNullOrWhiteSpace(proveedor) && proveedor != "*") //filtro por proveedor
                 query = query.Where(a => a.Proveedor == proveedor);
 

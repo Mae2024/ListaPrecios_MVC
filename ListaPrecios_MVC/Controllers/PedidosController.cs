@@ -123,10 +123,17 @@ namespace ListaPrecios_MVC.Controllers
             if (!string.IsNullOrWhiteSpace(buscar))
             {
                 IQueryable<Articulo> query = _context.Articulos;
-
-                foreach (string palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+               
+                string texto = buscar.Trim();
+                bool esCodigo = await _context.Articulos.AnyAsync(a => a.Codigo == texto);
+                if (esCodigo)
                 {
-                    query = query.Where(a => EF.Functions
+                    query = query.Where(a => a.Codigo == texto);
+                }
+                else
+                {
+                    foreach (var palabra in buscar.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        query = query.Where(a => EF.Functions
                         .Collate(a.Descripcion, "Modern_Spanish_CI_AI")
                         .Contains(palabra));
                 }
