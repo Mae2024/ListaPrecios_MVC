@@ -17,8 +17,9 @@ namespace ListaPrecios_MVC.Models
         public decimal PrecioFinal { get; set; }
         [Display (Name ="Actualizado")]
         public DateTime FechaActualizacion { get; set; }
-
-
+        [StringLength(10)]
+        [Display(Name = "Código")]
+        public string?  Codigo { get; set; }
 
     }
 }

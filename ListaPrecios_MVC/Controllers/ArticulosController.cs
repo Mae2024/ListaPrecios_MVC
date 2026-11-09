@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Data;
 using Microsoft.AspNetCore.Authorization;
+using ListaPrecios_MVC.Migrations;
 
 
 namespace ListaPrecios_MVC.Controllers
@@ -50,16 +51,11 @@ namespace ListaPrecios_MVC.Controllers
         [HttpGet]
         [Authorize(Roles ="Admin")]
         public IActionResult Importar() => View();
-
-        
-        
+                
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Importar(IFormFile archivo, string proveedor, bool reemplazar = false)
         {
-            
-       
-
             if (archivo == null || archivo.Length == 0)
             {
                 ModelState.AddModelError("", "Elegi un archivo .xlsx");
@@ -73,8 +69,7 @@ namespace ListaPrecios_MVC.Controllers
             {
                 // Todo lo que sigue se hace "en bloque": si algo falla, no se borra nada
                 using var transaccion = await _context.Database.BeginTransactionAsync();
-
-                
+                                
                 if (reemplazar)
                 {
                     borrados = await _context.Articulos
@@ -88,6 +83,13 @@ namespace ListaPrecios_MVC.Controllers
                 foreach (var fila in hoja.RowsUsed().Skip(1)) //salta los titulos
                 {
                     var desc = fila.Cell(1).GetString().Trim();
+
+                    string? codigo = fila.Cell(4).GetString().Trim();
+                    if (string.IsNullOrWhiteSpace(codigo))
+                    {
+                        codigo = null;
+                    }
+
                     if (string.IsNullOrEmpty(desc) || !vistos.Add(desc) || !LeerPrecio(fila.Cell(2), out var SinIva) || !LeerPrecio(fila.Cell(3), out var final))
                     { omitidos++; continue; }
 
@@ -101,16 +103,18 @@ namespace ListaPrecios_MVC.Controllers
                             Proveedor = proveedor,
                             PrecioSinIva = SinIva,
                             PrecioFinal = final,
+                            Codigo = codigo,
                             FechaActualizacion = HoraArgentina.Ahora()
 
                         });
                         creados++;
                     }
-                    else if (art.PrecioSinIva != SinIva || art.PrecioFinal != final)
+                    else if (art.PrecioSinIva != SinIva || art.PrecioFinal != final || art.Codigo != codigo)
                     {
                         art.PrecioSinIva = SinIva;
                         art.PrecioFinal = final;
-                        art.FechaActualizacion = DateTime.Now;
+                        art.Codigo = codigo;
+                        art.FechaActualizacion = HoraArgentina.Ahora();
                         actualizados++;
                     }
                     else sinCambios++;
@@ -140,12 +144,21 @@ namespace ListaPrecios_MVC.Controllers
 
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Crear(string descripcion, string proveedor, string? precioSinIva, string? precioFinal)
+        public async Task<IActionResult> Crear(string descripcion, string proveedor, string? precioSinIva, string? precioFinal, string? codigo)
         {
+            if (string.IsNullOrWhiteSpace(codigo))
+            {
+                codigo = null;
+            }
+            else
+            {
+                codigo = codigo.Trim();
+            }
             descripcion = (descripcion ?? "").Trim();
             proveedor = (proveedor ?? "").Trim();
             decimal sinIvaNumero;
             decimal FinalNumero;
+            
             bool FinalValido = LeerDecimal(precioFinal, out FinalNumero);
             LeerDecimal(precioSinIva, out sinIvaNumero);
 
@@ -162,6 +175,7 @@ namespace ListaPrecios_MVC.Controllers
             {
                 ViewBag.Descripcion = descripcion;
                 ViewBag.ProveedorElegido = proveedor;
+                ViewBag.Codigo = codigo;
                 ViewBag.Proveedores = await _context.Articulos
                     .Select(a => a.Proveedor).Distinct().OrderBy(p => p).ToArrayAsync();
                 return View();
@@ -173,8 +187,8 @@ namespace ListaPrecios_MVC.Controllers
                 Proveedor = proveedor,
                 PrecioSinIva = Math.Round(sinIvaNumero, 2),
                 PrecioFinal = Math.Round(FinalNumero, 2),
-                FechaActualizacion = HoraArgentina.Ahora()
-
+                FechaActualizacion = HoraArgentina.Ahora(),
+                Codigo = codigo
             };
 
             _context.Articulos.Add(art);
@@ -197,8 +211,17 @@ namespace ListaPrecios_MVC.Controllers
         
         [HttpPost, ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Editar(int id, string descripcion, string? precioSinIva, string? PrecioFinal)
+        public async Task<IActionResult> Editar(int id, string descripcion, string? precioSinIva, string? PrecioFinal, string? codigo)
         {
+            if (string.IsNullOrWhiteSpace(codigo))
+            {
+                codigo = null;
+            }
+            else
+            {
+                codigo = codigo.Trim();
+            }
+
             decimal sinIvaNumero;
             decimal FinalNumero;
             bool finalValido = LeerDecimal(PrecioFinal, out FinalNumero);
@@ -216,6 +239,7 @@ namespace ListaPrecios_MVC.Controllers
             art.Descripcion = descripcion.Trim();
             art.PrecioSinIva = Math.Round(sinIvaNumero, 2);
             art.PrecioFinal = Math.Round(FinalNumero, 2);
+            art.Codigo = codigo;
             art.FechaActualizacion = HoraArgentina.Ahora();
             await _context.SaveChangesAsync();
 
