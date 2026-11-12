@@ -1,4 +1,5 @@
 ﻿
+using DocumentFormat.OpenXml.Office.CustomUI;
 using ListaPrecios_MVC.DATA;
 using ListaPrecios_MVC.Migrations;
 using ListaPrecios_MVC.Models;
@@ -123,7 +124,7 @@ namespace ListaPrecios_MVC.Controllers
             if (!string.IsNullOrWhiteSpace(buscar))
             {
                 IQueryable<Articulo> query = _context.Articulos;
-               
+
                 string texto = buscar.Trim();
                 bool esCodigo = await _context.Articulos.AnyAsync(a => a.Codigo == texto);
                 if (esCodigo)
@@ -419,5 +420,62 @@ namespace ListaPrecios_MVC.Controllers
             return RedirectToAction("Index", new { fecha = fechaDelPedido.ToString("yyyy-MM-dd") });
         }
 
+
+        //GET: /Pedidos/WhatsApp
+        [HttpGet]
+        public async Task<IActionResult> WhatsApp(int id, string? telefono)
+        {
+            Pedido? pedido = await _context.Pedidos
+                .Include(p => p.Cliente)
+                .Include(p => p.Items)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (pedido == null)
+            {
+                return NotFound();
+            }
+            if (!PuedeVer(pedido))
+            {
+                return Forbid();
+            }
+            string texto = "Pedido #" + pedido.Id + " - " + pedido.Cliente?.Nombre + "\n";
+            texto = texto + pedido.Fecha.ToString("dd/MM/yyyy") + "\n\n";
+
+            foreach (PedidoItem item in pedido.Items.OrderBy(i => i.Id))
+            {
+                texto = texto + "- " + item.Cantidad.ToString("0.###") + " x " + item.Descripcion + " - $ " + item.SubTotal.ToString("N2") + "\n";
+            }
+
+            decimal total = pedido.Items.Sum(i => i.SubTotal);
+            texto = texto + "\nTOTAL: $ " + total.ToString("N2");
+
+            string numero = "";
+            if (telefono != null)
+            {
+                foreach (char c in telefono)
+                {
+                    if (char.IsDigit(c))
+                    {
+                        numero = numero + c;
+                    }
+                }
+            }
+
+            // 6) Armar el link de WhatsApp
+            string textoCodificado = Uri.EscapeDataString(texto);
+            string link;
+
+            if (numero == "")
+            {
+                link = "https://wa.me/?text=" + textoCodificado;
+            }
+            else
+            {
+                link = "https://wa.me/549" + numero + "?text=" + textoCodificado;
+            }
+
+            return Redirect(link);
+
+        }
     }
 }
